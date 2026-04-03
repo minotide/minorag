@@ -24,7 +24,7 @@ Este projeto segue a filosofia Minotide:
 > ```
 > Depois, faça logout/login.
 
-O modelo utilizado (`qwen2.5-coder:3b`) é leve (~2 GB) e roda bem em CPU. GPU não é necessária.
+O modelo utilizado (`qwen2.5-coder:3b`) é leve (~2 GB) e roda bem em CPU. GPU não é obrigatória.
 
 ---
 
@@ -66,11 +66,17 @@ Escolha a opção `1`. Isso vai ler os arquivos, gerar embeddings e armazenar no
 
 ### 3. Fazer perguntas
 
+**Via terminal:**
 ```bash
 python main.py
 ```
+Escolha a opção `2`. Digite suas perguntas. Use `exit` para sair.
 
-Escolha a opção `2`. Digite suas perguntas no terminal. Use `exit` para sair.
+**Via interface web:**
+```bash
+python main.py
+```
+Escolha a opção `3`. Acesse `http://localhost:5000` no navegador.
 
 ---
 
@@ -98,18 +104,18 @@ Quais pontos do código poderiam ser melhorados?
 
 ## ⚙️ Configuração
 
-Edite `config.py` para ajustar:
+Edite `minorag/config.py` para ajustar:
 
 | Parâmetro         | Padrão             | Descrição                        |
 | ----------------- | ------------------- | -------------------------------- |
 | `CODE_PATH`       | `./codebase`        | Pasta com o código fonte         |
 | `FILE_EXTENSIONS` | (ver config.py)     | Extensões de arquivo a indexar   |
 | `IGNORE_DIRS`     | (ver config.py)     | Pastas ignoradas na varredura    |
-| `CHUNK_SIZE`      | `800`               | Tamanho de cada chunk (chars)    |
-| `CHUNK_OVERLAP`   | `100`               | Sobreposição entre chunks        |
+| `CHUNK_SIZE`      | `1500`              | Tamanho de cada chunk (chars)    |
+| `CHUNK_OVERLAP`   | `200`               | Sobreposição entre chunks        |
 | `EMBED_MODEL`     | `nomic-embed-text`  | Modelo de embeddings (Ollama)    |
-| `LLM_MODEL`       | `qwen2.5-coder:3b`| Modelo de geração (Ollama)       |
-| `TOP_K`           | `5`                 | Quantidade de chunks retornados  |
+| `LLM_MODEL`       | `qwen2.5-coder:3b` | Modelo de geração (Ollama)       |
+| `TOP_K`           | `8`                 | Quantidade de chunks retornados  |
 
 ---
 
@@ -129,12 +135,18 @@ Edite `config.py` para ajustar:
 ```text
 minorag/
   .devcontainer/
-    devcontainer.json   ← configura o ambiente automaticamente
-    setup.sh            ← instala dependências e modelos
-  codebase/             ← clone seu projeto aqui
-  config.py             ← configurações do RAG
-  main.py               ← indexação + query loop
-  requirements.txt      ← dependências Python
+    devcontainer.json     ← configura o ambiente automaticamente
+    setup.sh              ← instala dependências e modelos
+  minorag/                ← pacote Python
+    __init__.py
+    config.py             ← configurações do RAG
+    core.py               ← lógica de indexação, embeddings e query
+    web.py                ← servidor web (Flask)
+    static/
+      index.html          ← interface web
+  codebase/               ← clone seu projeto aqui
+  main.py                 ← entry point
+  requirements.txt        ← dependências Python
 ```
 
 ---

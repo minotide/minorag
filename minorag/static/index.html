@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>minorag</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+            background: #0d1117;
+            color: #c9d1d9;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #21262d;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        header h1 {
+            font-size: 18px;
+            color: #58a6ff;
+            font-weight: 600;
+        }
+
+        header h1 span {
+            color: #484f58;
+            font-weight: 400;
+            font-size: 14px;
+            margin-left: 8px;
+        }
+
+        #btn-index {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        #btn-index:hover {
+            background: #30363d;
+        }
+
+        #btn-index:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+        #chat {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .msg {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            background: #1f6feb;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg.bot {
+            align-self: flex-start;
+            background: #161b22;
+            border: 1px solid #21262d;
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg.system {
+            align-self: center;
+            background: #1c2128;
+            border: 1px solid #30363d;
+            color: #8b949e;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .msg.error {
+            border-color: #f85149;
+            color: #f85149;
+        }
+
+        .typing {
+            color: #8b949e;
+            font-style: italic;
+        }
+
+        #input-area {
+            padding: 16px 24px;
+            border-top: 1px solid #21262d;
+            display: flex;
+            gap: 12px;
+        }
+
+        #question {
+            flex: 1;
+            background: #161b22;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+        }
+
+        #question:focus {
+            border-color: #58a6ff;
+        }
+
+        #btn-send {
+            background: #238636;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        #btn-send:hover {
+            background: #2ea043;
+        }
+
+        #btn-send:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #484f58;
+            font-size: 14px;
+            text-align: center;
+            line-height: 2;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>minorag <span>busca inteligente para código</span></h1>
+        <button id="btn-index" onclick="indexCode()">Indexar codebase</button>
+    </header>
+
+    <div id="chat">
+        <div class="empty-state">
+            Indexe o código e faça perguntas sobre o projeto.<br>
+            Exemplos: "Quais endpoints existem?", "Explique a arquitetura geral"
+        </div>
+    </div>
+
+    <div id="input-area">
+        <textarea id="question" placeholder="Faça uma pergunta sobre o código..." rows="1"
+            onkeydown="handleKey(event)"></textarea>
+        <button id="btn-send" onclick="sendQuestion()">Enviar</button>
+    </div>
+
+    <script>
+        const chat = document.getElementById("chat");
+        const input = document.getElementById("question");
+        const btnSend = document.getElementById("btn-send");
+        const btnIndex = document.getElementById("btn-index");
+        let hasMessages = false;
+
+        function addMsg(text, cls) {
+            if (!hasMessages) {
+                chat.innerHTML = "";
+                hasMessages = true;
+            }
+            const div = document.createElement("div");
+            div.className = "msg " + cls;
+            div.textContent = text;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+            return div;
+        }
+
+        function handleKey(e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendQuestion();
+            }
+        }
+
+        async function indexCode() {
+            btnIndex.disabled = true;
+            btnIndex.textContent = "Indexando...";
+            const msg = addMsg("Indexando código... isso pode levar alguns minutos.", "system");
+
+            try {
+                const res = await fetch("/api/index", { method: "POST" });
+                const data = await res.json();
+
+                if (res.ok) {
+                    addMsg(data.message, "system");
+                } else {
+                    addMsg(data.error || "Erro na indexação", "system error");
+                }
+            } catch (err) {
+                addMsg("Erro de conexão: " + err.message, "system error");
+            }
+
+            btnIndex.disabled = false;
+            btnIndex.textContent = "Indexar codebase";
+        }
+
+        async function sendQuestion() {
+            const question = input.value.trim();
+            if (!question) return;
+
+            input.value = "";
+            btnSend.disabled = true;
+
+            addMsg(question, "user");
+            const typing = addMsg("Pensando...", "bot typing");
+
+            try {
+                const res = await fetch("/api/query", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question }),
+                });
+                const data = await res.json();
+
+                typing.remove();
+
+                if (res.ok) {
+                    addMsg(data.answer, "bot");
+                } else {
+                    addMsg(data.error || "Erro ao processar pergunta", "bot error");
+                }
+            } catch (err) {
+                typing.remove();
+                addMsg("Erro de conexão: " + err.message, "bot error");
+            }
+
+            btnSend.disabled = false;
+            input.focus();
+        }
+
+        // Auto-resize textarea
+        input.addEventListener("input", function () {
+            this.style.height = "auto";
+            this.style.height = Math.min(this.scrollHeight, 120) + "px";
+        });
+    </script>
+</body>
+
+</html>
