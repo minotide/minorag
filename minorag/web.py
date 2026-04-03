@@ -1,10 +1,11 @@
+import json as _json
 import os
 
 import chromadb
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory, stream_with_context
 
 from minorag.config import CHROMA_PATH, CODE_PATH, TOP_K
-from minorag.core import chunk_text, embed, generate, read_files
+from minorag.core import chunk_text, embed, generate, generate_stream_iter, read_files
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -91,3 +92,46 @@ Answer clearly and technically."""
     answer = generate(prompt)
 
     return jsonify({"answer": answer})
+
+
+@app.route("/api/query/stream", methods=["POST"])
+def api_query_stream():
+    data = request.get_json()
+    question = data.get("question", "").strip()
+
+    if not question:
+        return jsonify({"error": "Pergunta vazia"}), 400
+
+    def event_stream():
+        client = chromadb.PersistentClient(path=CHROMA_PATH)
+        try:
+            collection = client.get_collection("codebase")
+        except Exception:
+            yield f"data: {_json.dumps({'type': 'error', 'text': 'Índice não encontrado. Indexe o código primeiro.'})}\n\n"
+            return
+
+        q_emb = embed(question)
+        results = collection.query(query_embeddings=[q_emb], n_results=TOP_K)
+
+        chunks = "\n\n---\n\n".join(results["documents"][0])
+
+        prompt = f"""You are a senior software engineer.
+
+Use the code context below to answer.
+
+Context:
+----------------
+{chunks}
+----------------
+
+Question:
+{question}
+
+Answer clearly and technically."""
+
+        for token in generate_stream_iter(prompt):
+            yield f"data: {_json.dumps({'type': 'token', 'text': token})}\n\n"
+
+        yield f"data: {_json.dumps({'type': 'done'})}\n\n"
+
+    return Response(stream_with_context(event_stream()), mimetype="text/event-stream")

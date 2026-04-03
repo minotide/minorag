@@ -1,3 +1,4 @@
+import json
 import os
 
 import chromadb
@@ -76,6 +77,49 @@ def generate(prompt):
         raise SystemExit(1)
 
 
+def generate_stream(prompt):
+    try:
+        response = requests.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={"model": LLM_MODEL, "prompt": prompt, "stream": True},
+            timeout=300,
+            stream=True,
+        )
+        response.raise_for_status()
+        for line in response.iter_lines():
+            if line:
+                data = json.loads(line)
+                token = data.get("response", "")
+                if token:
+                    print(token, end="", flush=True)
+                if data.get("done"):
+                    break
+    except requests.exceptions.ConnectionError:
+        print("\nOllama não está respondendo. Inicie-o com:\n\n    ollama serve &\n")
+        raise SystemExit(1)
+
+
+def generate_stream_iter(prompt):
+    try:
+        response = requests.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={"model": LLM_MODEL, "prompt": prompt, "stream": True},
+            timeout=300,
+            stream=True,
+        )
+        response.raise_for_status()
+        for line in response.iter_lines():
+            if line:
+                data = json.loads(line)
+                token = data.get("response", "")
+                if token:
+                    yield token
+                if data.get("done"):
+                    break
+    except requests.exceptions.ConnectionError:
+        yield "\nOllama não está respondendo. Inicie-o com:\n\n    ollama serve &\n"
+
+
 # -----------------------------
 # Indexação
 # -----------------------------
@@ -143,7 +187,6 @@ Question:
 
 Answer clearly and technically."""
 
-        answer = generate(prompt)
-
-        print("\nResposta:\n")
-        print(answer)
+        print("\nPensando...\n")
+        generate_stream(prompt)
+        print()
