@@ -98,9 +98,13 @@ def api_query_stream():
             yield f"data: {_json.dumps({'type': 'error', 'text': 'Índice não encontrado. Indexe o código primeiro.'})}\n\n"
             return
 
+        yield f"data: {_json.dumps({'type': 'log', 'text': 'Gerando embedding da pergunta...'})}\n\n"
         q_emb = embed(question)
+
+        yield f"data: {_json.dumps({'type': 'log', 'text': 'Buscando contexto no índice...'})}\n\n"
         results = collection.query(query_embeddings=[q_emb], n_results=TOP_K)
 
+        yield f"data: {_json.dumps({'type': 'log', 'text': 'Gerando resposta...'})}\n\n"
         chunks = "\n\n---\n\n".join(results["documents"][0])
 
         for token in generate_stream_iter(build_prompt(question, chunks)):

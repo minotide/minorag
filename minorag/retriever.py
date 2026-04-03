@@ -30,12 +30,15 @@ def query_loop():
         if question.lower() in ["exit", "quit"]:
             break
 
+        print("\nGerando embedding da pergunta...")
         q_emb = embed(question)
+        print("Buscando contexto no índice...")
         results = collection.query(query_embeddings=[q_emb], n_results=TOP_K)
+        print("Gerando resposta...\n")
 
         chunks = "\n\n---\n\n".join(results["documents"][0])
         prompt = build_prompt(question, chunks)
-
-        print("\nPensando...\n")
+        generate_stream(prompt)
+        print()
         generate_stream(prompt)
         print()
