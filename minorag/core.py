@@ -49,23 +49,31 @@ def chunk_text(text):
 
 
 def embed(text):
-    response = requests.post(
-        f"{OLLAMA_URL}/api/embeddings",
-        json={"model": EMBED_MODEL, "prompt": text},
-        timeout=120,
-    )
-    response.raise_for_status()
-    return response.json()["embedding"]
+    try:
+        response = requests.post(
+            f"{OLLAMA_URL}/api/embeddings",
+            json={"model": EMBED_MODEL, "prompt": text},
+            timeout=120,
+        )
+        response.raise_for_status()
+        return response.json()["embedding"]
+    except requests.exceptions.ConnectionError:
+        print("\nOllama não está respondendo. Inicie-o com:\n\n    ollama serve &\n")
+        raise SystemExit(1)
 
 
 def generate(prompt):
-    response = requests.post(
-        f"{OLLAMA_URL}/api/generate",
-        json={"model": LLM_MODEL, "prompt": prompt, "stream": False},
-        timeout=300,
-    )
-    response.raise_for_status()
-    return response.json()["response"]
+    try:
+        response = requests.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={"model": LLM_MODEL, "prompt": prompt, "stream": False},
+            timeout=300,
+        )
+        response.raise_for_status()
+        return response.json()["response"]
+    except requests.exceptions.ConnectionError:
+        print("\nOllama não está respondendo. Inicie-o com:\n\n    ollama serve &\n")
+        raise SystemExit(1)
 
 
 # -----------------------------
