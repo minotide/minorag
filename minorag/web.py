@@ -5,7 +5,9 @@ import chromadb
 from flask import Flask, Response, jsonify, request, send_from_directory, stream_with_context
 
 from minorag.config import CHROMA_PATH, CODE_PATH, TOP_K
-from minorag.core import chunk_text, embed, generate, generate_stream_iter, read_files
+from minorag.indexer import chunk_text, read_files
+from minorag.ollama import embed, generate, generate_stream_iter
+from minorag.retriever import build_prompt
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -75,21 +77,7 @@ def api_query():
 
     chunks = "\n\n---\n\n".join(results["documents"][0])
 
-    prompt = f"""You are a senior software engineer.
-
-Use the code context below to answer.
-
-Context:
-----------------
-{chunks}
-----------------
-
-Question:
-{question}
-
-Answer clearly and technically."""
-
-    answer = generate(prompt)
+    answer = generate(build_prompt(question, chunks))
 
     return jsonify({"answer": answer})
 
@@ -115,21 +103,7 @@ def api_query_stream():
 
         chunks = "\n\n---\n\n".join(results["documents"][0])
 
-        prompt = f"""You are a senior software engineer.
-
-Use the code context below to answer.
-
-Context:
-----------------
-{chunks}
-----------------
-
-Question:
-{question}
-
-Answer clearly and technically."""
-
-        for token in generate_stream_iter(prompt):
+        for token in generate_stream_iter(build_prompt(question, chunks)):
             yield f"data: {_json.dumps({'type': 'token', 'text': token})}\n\n"
 
         yield f"data: {_json.dumps({'type': 'done'})}\n\n"

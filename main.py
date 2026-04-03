@@ -1,4 +1,5 @@
-from minorag.core import index_code, query_loop
+from minorag.indexer import index_code
+from minorag.retriever import query_loop
 from minorag.web import app
 
 
