@@ -57,7 +57,7 @@ def query_loop():
         results = collection.query(query_embeddings=[q_emb], n_results=TOP_K)
         print("Gerando resposta...\n")
 
-        chunks = "\n\n---\n\n".join(results["documents"][0])
+        chunks = "\n\n---\n\n".join((results["documents"] or [[]])[0])
         prompt = build_prompt(question, chunks)
         generate_stream(prompt)
         print()
