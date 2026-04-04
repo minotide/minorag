@@ -171,7 +171,7 @@ minorag/
 
 ### 🔢 Aumentar `TOP_K` para mais contexto nas respostas
 
-`TOP_K` define quantos chunks do índice são recuperados e enviados como contexto para o LLM a cada pergunta. O valor padrão é `5`.
+`TOP_K` define quantos chunks do índice são recuperados e enviados como contexto para o LLM a cada pergunta. O valor padrão é `8`.
 
 Aumentar esse número pode melhorar a qualidade das respostas em projetos grandes, onde a informação relevante está espalhada em vários arquivos. Por outro lado, cada chunk extra aumenta o número de tokens no prompt, o que impacta diretamente o tempo de resposta (prefill) e o uso de memória.
 
@@ -180,8 +180,8 @@ Aumentar esse número pode melhorar a qualidade das respostas em projetos grande
 | `TOP_K` | Uso de contexto estimado | Quando usar |
 | ------- | ------------------------ | ----------- |
 | `3`     | ~3.000 chars             | Projetos pequenos, respostas rápidas |
-| `5`     | ~5.000 chars *(padrão)*  | Equilíbrio entre qualidade e velocidade |
-| `8`     | ~8.000 chars             | Projetos grandes, perguntas amplas |
+| `5`     | ~5.000 chars             | Equilíbrio entre qualidade e velocidade |
+| `8`     | ~8.000 chars *(padrão)*  | Projetos grandes, perguntas amplas |
 | `12`    | ~12.000 chars            | Máxima cobertura — exige `num_ctx` alto |
 
 > Se aumentar `TOP_K` para `8` ou mais, aumente `num_ctx` proporcionalmente em `OLLAMA_OPTIONS` para garantir que o modelo consiga processar todo o contexto sem truncar.
@@ -192,56 +192,7 @@ Aumentar esse número pode melhorar a qualidade das respostas em projetos grande
 
 O template do prompt fica em `minorag/config.py` na variável `PROMPT_TEMPLATE` e é usado por `build_prompt` em `minorag/retriever.py`. Para customizar, basta editar o `config.py`.
 
-**Template padrão em `config.py`:**
-
-```python
-PROMPT_TEMPLATE = """
-Você é um engenheiro de software sênior.
-Use o contexto abaixo para responder em português.
-
-Contexto:
-----------------
-{chunks}
-----------------
-
-Pergunta:
-{question}
-
-Estruture sempre sua resposta em três seções:
-1. Resposta direta.
-2. Referências de código (arquivo + linha, se possível).
-3. Advertências ou casos extremos.
-
-Responda de forma clara e técnica.
-"""
-```
-
 > Os marcadores `{chunks}` e `{question}` são obrigatórios — são substituídos automaticamente pelo retriever antes de enviar ao modelo.
-
-**Exemplos de customização:**
-
-Focar mais em performance e otimização:
-```python
-PROMPT_TEMPLATE = """
-Você é um engenheiro de software sênior especializado em performance e otimização de código.
-Use o contexto abaixo para responder em português.
-
-Contexto:
-----------------
-{chunks}
-----------------
-
-Pergunta:
-{question}
-
-Estruture sempre sua resposta em três seções:
-1. Resposta direta.
-2. Referências de código (arquivo + linha, se possível).
-3. Advertências ou casos extremos.
-
-Responda de forma clara e técnica. Dê sugestões de otimização e melhores práticas quando relevante.
-"""
-```
 
 ---
 

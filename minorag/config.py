@@ -22,7 +22,7 @@ OLLAMA_URL = "http://localhost:11434"
 EMBED_MODEL = "nomic-embed-text"
 LLM_MODEL = "qwen2.5-coder:3b"
 
-TOP_K = 5
+TOP_K = 8
 
 OLLAMA_OPTIONS: dict[str, int | float] = {
     "num_ctx": 4096,
@@ -33,21 +33,19 @@ OLLAMA_OPTIONS: dict[str, int | float] = {
 }
 
 PROMPT_TEMPLATE = """
-Você é um engenheiro de software sênior.
-Use o contexto abaixo para responder em português.
+You are a senior software engineer answering questions about a codebase.
 
-Contexto:
+RULES:
+- Answer ONLY based on the code context provided below.
+- If the context does not contain enough information to answer, say "I don't have enough context to answer this accurately."
+
+Context:
 ----------------
 {chunks}
 ----------------
 
-Pergunta:
+Question:
 {question}
 
-Estruture sempre sua resposta em três seções:
-1. Resposta direta.
-2. Referências de código (arquivo + linha, se possível).
-3. Advertências ou casos extremos.
-
-Responda de forma clara e técnica.
+Answer clearly and technically
 """
