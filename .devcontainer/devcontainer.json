@@ -9,7 +9,7 @@
     "portsAttributes": {
         "5000": {
             "label": "minorag web",
-            "onAutoForward": "openBrowser"
+            "onAutoForward": "openBrowserOnce"
         }
     },
     "customizations": {
@@ -28,7 +28,7 @@
     },
     "postCreateCommand": "bash .devcontainer/setup.sh",
     "postStartCommand": "nohup ollama serve > /tmp/ollama.log 2>&1 &",
-    "postAttachCommand": "cd /workspaces/minorag && pip install -q -r requirements.txt && nohup python main.py > /tmp/minorag.log 2>&1 &",
+    "postAttachCommand": "cd /workspaces/minorag && pip install -q -r requirements.txt && (ss -tlnp | grep -q ':5000' || python main.py)",
     "mounts": [],
     "remoteUser": "vscode"
 }
