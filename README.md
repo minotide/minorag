@@ -35,15 +35,17 @@ O modelo utilizado (`qwen2.5-coder:3b`) é leve (~2 GB) e roda bem em CPU ***(GP
 3. Aguarde a configuração automática (apenas na primeira vez)
 4. **Pronto.** Python, Ollama, modelos e dependências já estarão instalados
 
-O servidor Ollama inicia automaticamente com o container.
+Ao iniciar o container:
+- O servidor **Ollama** sobe automaticamente (`postStartCommand`)
+- O servidor **web** sobe automaticamente (`postAttachCommand`) na porta `5000`
+
+Após o container subir, acesse **http://localhost:5000** no navegador.
 
 ---
 
 ## 🔧 Como usar
 
 > Suporta: `.java` `.py` `.js` `.ts` `.go` `.rs` `.c` `.cpp` `.cs` `.rb` `.php` `.kt` `.scala` `.swift` `.sql` `.sh` e mais. Configure pelo painel **⚙ Indexação**.
-
-Após abrir o projeto no container, acesse **http://localhost:5000** no navegador.
 
 ### 1. Configurar repositório
 
@@ -137,6 +139,8 @@ Controla quais arquivos serão processados e como são divididos:
 ### Porta do servidor
 
 A variável `WEB_PORT` (padrão `5000`) requer reinício do servidor para ter efeito — edite diretamente o `.env` e reinicie.
+
+> **Atenção:** a porta em `portsAttributes` no `devcontainer.json` é hardcoded como `5000`. Se você alterar `WEB_PORT` no `.env`, o servidor subirá na nova porta, mas o VS Code **não encaminhará essa porta automaticamente** ao reabrir o projeto — você precisará também atualizar o valor em `devcontainer.json` e fazer rebuild do container.
 
 ---
 
