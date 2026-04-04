@@ -83,21 +83,18 @@ Escolha a opção `3`. Acesse `http://localhost:5000` no navegador.
 ## 💬 Exemplos de perguntas
 
 ```text
-Explique a arquitetura geral do projeto
-Quais são os principais módulos e suas responsabilidades?
-Como está organizada a estrutura de pastas?
-Quais endpoints ou rotas existem?
-Quais classes/funções acessam o banco de dados?
-Existe algum padrão de design sendo usado (MVC, Clean Architecture, etc)?
-Como funciona a autenticação no sistema?
-Quais dependências externas o projeto utiliza?
-Onde está a lógica de negócio principal?
-Quais testes existem e o que eles cobrem?
-Existe tratamento de erros centralizado?
-Como os dados são validados antes de persistir?
-Quais configurações o projeto espera (env vars, configs)?
-Explique o fluxo completo de uma requisição
-Quais pontos do código poderiam ser melhorados?
+- Explique a arquitetura geral do projeto
+- Quais são os principais módulos e suas responsabilidades?
+- Quais endpoints ou rotas existem?
+- Quais funções acessam o banco de dados?
+- Como funciona a autenticação no sistema?
+- Quais dependências externas o projeto utiliza?
+- Onde está a lógica de negócio principal?
+- Quais testes existem e o que eles cobrem?
+- Existe tratamento de erros centralizado?
+- Como os dados são validados antes de persistir?
+- Quais configurações o projeto espera (env vars, configs)?
+- Quais pontos do código poderiam ser melhorados?
 ```
 
 ---
@@ -172,8 +169,6 @@ minorag/
 
 ## ⚡ Melhorias possíveis
 
-- Habilitar GPU para modelos maiores (ver seção abaixo)
-
 ### 🔢 Aumentar `TOP_K` para mais contexto nas respostas
 
 `TOP_K` define quantos chunks do índice são recuperados e enviados como contexto para o LLM a cada pergunta. O valor padrão é `5`.
@@ -190,6 +185,8 @@ Aumentar esse número pode melhorar a qualidade das respostas em projetos grande
 | `12`    | ~12.000 chars            | Máxima cobertura — exige `num_ctx` alto |
 
 > Se aumentar `TOP_K` para `8` ou mais, aumente `num_ctx` proporcionalmente em `OLLAMA_OPTIONS` para garantir que o modelo consiga processar todo o contexto sem truncar.
+
+---
 
 ### ✏️ Personalizar o prompt de resposta
 
@@ -242,6 +239,8 @@ Always structure your answer in three sections:
 
 As variáveis `{chunks}` (contexto recuperado do índice) e `{question}` (pergunta do usuário) devem sempre estar presentes no prompt.
 
+---
+
 ### 📄 `architecture.md` como contexto extra
 
 Uma técnica eficaz de RAG é criar manualmente um arquivo descrevendo a arquitetura do projeto indexado — informações que o código sozinho não deixa claro para a LLM, como intenções de design, padrões adotados e fluxos principais.
@@ -272,7 +271,7 @@ Como o indexer já processa arquivos `.md`, esse arquivo é incluído automatica
 
 ---
 
-## 🎮 GPU (opcional)
+### 🎮 GPU (opcional)
 
 Para rodar modelos maiores com aceleração por GPU NVIDIA:
 
