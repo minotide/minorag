@@ -8,7 +8,7 @@ ENV_PATH = str(_ENV_PATH)
 
 load_dotenv(_ENV_PATH)
 
-CODE_PATH = "./codebase"
+CODE_PATH = "./.codebase"
 CHROMA_PATH = "./.chromadb"
 
 FILE_EXTENSIONS = [

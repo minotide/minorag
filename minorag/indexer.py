@@ -46,7 +46,7 @@ def read_files(path: str) -> list[tuple[str, str]]:
 
 def index_code():
     """
-    Indexa todos os arquivos de código da pasta codebase/ no ChromaDB.
+    Indexa todos os arquivos de código da pasta .codebase/ no ChromaDB.
 
     Lê os arquivos, divide em chunks, gera embeddings via Ollama
     e armazena os vetores na coleção 'codebase' do ChromaDB.

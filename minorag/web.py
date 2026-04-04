@@ -42,13 +42,13 @@ def api_index():
     if not docs:
         repo_url = GIT_REPO_URL.strip()
         if not repo_url:
-            return jsonify({"error": "Nenhum arquivo encontrado em codebase/. Configure e clone um repositório pelo painel Git."}), 400
+            return jsonify({"error": "Nenhum arquivo encontrado em .codebase/. Configure e clone um repositório pelo painel Git."}), 400
 
         from minorag.git import clone_repo
         ok = clone_repo(repo_url, GIT_BRANCH or "main",
                         GIT_ACCESS_TOKEN or None)
         if not ok:
-            return jsonify({"error": "Nenhum arquivo em codebase/ e falha ao clonar o repositório configurado."}), 400
+            return jsonify({"error": "Nenhum arquivo em .codebase/ e falha ao clonar o repositório configurado."}), 400
 
         docs = read_files(CODE_PATH)
         if not docs:

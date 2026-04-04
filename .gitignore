@@ -1,8 +1,8 @@
 .chromadb/
 __pycache__/
 *.pyc
-codebase/*
-!codebase/.gitkeep
+.codebase/*
+!.codebase/.gitkeep
 .env
 spec.md
 

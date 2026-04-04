@@ -52,7 +52,7 @@ def _get_git_env() -> dict[str, str]:
 
 
 def _clean_directories():
-    """Limpa a pasta codebase/ para receber um novo clone."""
+    """Limpa a pasta .codebase/ para receber um novo clone."""
     if os.path.exists(CODE_PATH):
         shutil.rmtree(CODE_PATH)
     os.makedirs(CODE_PATH, exist_ok=True)
@@ -63,9 +63,9 @@ def clone_repo(
     branch: str | None = None,
     token: str | None = None,
 ) -> bool:
-    """Clona um repositório git na pasta codebase.
+    """Clona um repositório git na pasta .codebase.
 
-    Limpa os diretórios codebase/ e .chromadb/ antes de clonar.
+    Limpa o diretório .codebase/ antes de clonar.
     Suporta autenticação via token (HTTPS) ou chave SSH.
 
     @param repo_url: URL do repositório. Usa GIT_REPO_URL se não informado.

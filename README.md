@@ -43,7 +43,7 @@ O servidor Ollama inicia automaticamente com o container.
 
 > Suporta: `.java` `.py` `.js` `.ts` `.go` `.rs` `.c` `.cpp` `.cs` `.rb` `.php` `.kt` `.scala` `.swift` `.sql` `.sh` `.yaml` `.json` `.xml` `.md` e mais. <br> Configure em `config.py`.
 
-Após abrir o projeto no container, acesse **http://localhost:5000** — a interface web abre automaticamente no navegador.
+Após abrir o projeto no container, acesse **http://localhost:5000**, a interface web abre automaticamente no navegador.
 
 ### 1. Configurar repositório
 
@@ -61,7 +61,7 @@ Abra o painel **⚙ Repositório** no canto superior direito e informe:
 
 Clique em **Sincronizar Codebase** para clonar o repositório e gerar o índice de busca automaticamente.
 
-> Todo o processamento é local: o código fica em `codebase/`, os embeddings em `.chromadb/` — nada sai do seu container.
+> Todo o processamento é local: o código fica em `.codebase/`, os embeddings em `.chromadb/`.
 
 ### 3. Fazer perguntas
 
@@ -79,7 +79,7 @@ Para ajustes avançados de modelos e performance, edite `minorag/config.py`:
 
 | Parâmetro         | Padrão             | Descrição                                          |
 | ----------------- | ------------------ | -------------------------------------------------- |
-| `CODE_PATH`       | `./codebase`       | Pasta com o código fonte                           |
+| `CODE_PATH`       | `./.codebase`      | Pasta com o código fonte                           |
 | `FILE_EXTENSIONS` | (ver config.py)    | Extensões de arquivo a indexar                     |
 | `IGNORE_DIRS`     | (ver config.py)    | Pastas ignoradas na varredura                      |
 | `CHUNK_SIZE`      | (ver config.py)    | Tamanho de cada chunk em caracteres                |
@@ -107,7 +107,7 @@ Para ajustes avançados de modelos e performance, edite `minorag/config.py`:
 
 ## 🧠 Como funciona
 
-1. **Leitura** — percorre `codebase/` e lê arquivos das extensões configuradas
+1. **Leitura** — percorre `.codebase/` e lê arquivos das extensões configuradas
 2. **Chunking** — divide cada arquivo em pedaços menores
 3. **Embeddings** — gera vetores via Ollama (`nomic-embed-text`)
 4. **Armazenamento** — salva no ChromaDB (persistente em disco)
@@ -149,7 +149,7 @@ O template do prompt fica em `minorag/config.py` na variável `PROMPT_TEMPLATE` 
 
 Uma técnica eficaz de RAG é criar manualmente um arquivo descrevendo a arquitetura do projeto indexado — informações que o código sozinho não deixa claro para a LLM, como intenções de design, padrões adotados e fluxos principais.
 
-Crie o arquivo dentro da pasta do projeto em `codebase/`:
+Crie o arquivo dentro da pasta do projeto em `.codebase/`:
 
 ```markdown
 # architecture.md
