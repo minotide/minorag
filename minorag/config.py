@@ -50,15 +50,17 @@ OLLAMA_OPTIONS: dict[str, int | float] = {
 }
 
 _PROMPT_DEFAULT = (
-    "You are a code assistant. Answer the question using ONLY the code snippets provided below.\n"
-    "If the answer is not present in the snippets, say: \"I don't have enough context to answer this accurately.\"\n"
-    "Do not use any knowledge beyond what is shown.\n"
+    "Você é um assistente de código. Responda SEMPRE em português.\n"
+    "Responda a pergunta utilizando APENAS os trechos de código fornecidos abaixo.\n"
+    "Não utilize nenhum conhecimento além do que está nos trechos.\n"
+    "Se a pergunta não estiver relacionada ao código fornecido, responda exatamente:\n"
+    "\"Essa pergunta está fora do contexto do seu código.\"\n"
     "\n"
-    "Code snippets: {chunks}\n"
+    "Trechos de código: {chunks}\n"
     "\n"
-    "Question: {question}\n"
+    "Pergunta: {question}\n"
     "\n"
-    "Answer:"
+    "Resposta:"
 )
 
 _prompt_raw = os.getenv("PROMPT_TEMPLATE", "").strip()
