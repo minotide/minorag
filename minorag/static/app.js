@@ -285,6 +285,7 @@ async function resetEnv() {
         const data = await res.json();
         if (res.ok) {
             alert("✓ " + data.message);
+            location.reload();
         } else {
             alert("✗ " + (data.error || "Erro ao restaurar .env"));
         }

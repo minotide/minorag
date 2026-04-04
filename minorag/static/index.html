@@ -21,6 +21,11 @@
         </div>
     </header>
 
+    <div id="local-note">
+        Configurações, codebase e índices são salvos <strong>apenas localmente</strong> no arquivo
+        <code>.env</code> e nos diretórios <code>.codebase</code> e <code>.chromadb</code> do projeto.
+    </div>
+
     <!-- Painel de configuração LLM -->
     <div id="llm-panel" class="config-panel hidden">
         <div class="config-panel-header">
@@ -161,10 +166,6 @@
                     title="Clona repositório e gera os índices de busca.">Sincronizar Codebase</button>
                 <button class="btn-danger" onclick="clearCodebase()"
                     title="Remove todos os arquivos clonados e o índice do ChromaDB.">Limpar Codebase</button>
-            </div>
-            <div class="config-note">
-                Configurações, codebase e índices são salvos <strong>apenas localmente</strong> no arquivo
-                <code>.env</code> e nos diretórios <code>.codebase</code> e <code>.chromadb</code> do projeto.
             </div>
             <div id="git-status" class="config-status-msg"></div>
         </div>

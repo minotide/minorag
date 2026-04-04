@@ -81,6 +81,20 @@ header h1 span {
     cursor: not-allowed;
 }
 
+/* ---- Nota de armazenamento local ---- */
+
+#local-note {
+    padding: 8px 24px;
+    font-size: 12px;
+    color: #8b949e;
+    background: #0d1117;
+    border-bottom: 1px solid #21262d;
+}
+
+#local-note code {
+    color: #e3b341;
+}
+
 /* ---- Config Panels (Git, LLM, Indexação) ---- */
 
 .config-panel {
@@ -143,6 +157,22 @@ header h1 span {
 .config-actions button:disabled {
     opacity: 0.5;
     cursor: wait;
+}
+
+.config-actions .btn-danger {
+    background: #3d1010;
+    color: #f85149;
+    border-color: #6b1b1b;
+}
+
+.config-actions .btn-danger:hover {
+    background: #5c1a1a;
+    border-color: #6b1b1b;
+}
+
+.config-actions .btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .config-note {
