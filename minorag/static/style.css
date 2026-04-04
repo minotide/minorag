@@ -89,7 +89,7 @@ header h1 span {
 }
 
 #llm-panel .config-panel-body {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(6, 1fr);
 }
 
 .full-col {
