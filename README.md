@@ -4,7 +4,7 @@
 
 Este projeto segue a filosofia Minotide:
 
-> Ferramentas simples, locais e open source que funcionam sem fricção.
+> Ferramentas simples, local-first e open source que funcionam sem fricção.
 
 ---
 
@@ -43,7 +43,7 @@ O servidor Ollama inicia automaticamente com o container.
 
 > Suporta: `.java` `.py` `.js` `.ts` `.go` `.rs` `.c` `.cpp` `.cs` `.rb` `.php` `.kt` `.scala` `.swift` `.sql` `.sh` e mais. Configure pelo painel **⚙ Indexação**.
 
-Após abrir o projeto no container, acesse **http://localhost:5000**, a interface web abre automaticamente no navegador.
+Após abrir o projeto no container, acesse **http://localhost:5000** no navegador.
 
 ### 1. Configurar repositório
 
@@ -53,25 +53,52 @@ Abra o painel **⚙ Repositório** no canto superior direito e informe:
 - **Branch** desejada (padrão: `main`)
 - **Token de acesso** para repositórios privados (opcional)
 - **Caminho chave SSH** para autenticação (opcional, ex: `~/.ssh/id_rsa`)
-- Clique em **Salvar no .env** para guardar as configurações. (São salvas **no arquivo `.env` do projeto**, dentro do seu container.)
+- **Atualizar no startup** — marque para clonar/atualizar automaticamente ao iniciar o servidor
+- Clique em **Salvar no .env** para guardar as configurações (salvas **no arquivo `.env` do projeto**, dentro do seu container)
 
-> Não se esqueça de manter no .gitignore o arquivo .env para não vazar suas credenciais.
+> Não se esqueça de manter o arquivo `.env` no `.gitignore` para não vazar credenciais.
 
 ### 2. Sincronizar Codebase
 
-Clique em **Sincronizar Codebase** para clonar o repositório e gerar o índice de busca automaticamente.
+Clique em **Sincronizar Codebase** para clonar o repositório e gerar o índice de busca. O progresso (clone, chunks indexados) é exibido em tempo real na interface.
 
-> Todo o processamento é local: o código fica em `.codebase/`, os embeddings em `.chromadb/`.
+Para recomeçar do zero, clique em **Limpar Codebase** — remove todos os arquivos clonados e o índice do ChromaDB.
+
+> Todo o processamento é local: o código fica em `.codebase/`, os embeddings em `.chromadb/` e configurações no `.env`
 
 ### 3. Fazer perguntas
 
 Digite sua pergunta no campo de texto e pressione **Enter** ou clique em **Enviar**.
+
+> Se o índice estiver vazio, a interface exibe **"Índice não encontrado. Indexe o código primeiro."** — clique em **Sincronizar Codebase** para resolver.
 
 ---
 
 ## ⚙️ Configuração via interface web
 
 Todos os parâmetros do projeto são configuráveis diretamente pela interface, sem precisar editar arquivos. Cada painel salva as configurações no `.env` e aplica as mudanças imediatamente na sessão atual.
+
+O botão **Restaurar .env** (canto superior direito) sobrescreve o `.env` com todos os valores padrão e recarrega as configurações em memória — útil para desfazer edições manuais incorretas.
+
+### Painel ⚙ Repositório
+
+Configura o repositório Git e dispara o clone/indexação:
+
+| Campo | Variável `.env` | Padrão | Descrição |
+|---|---|---|---|
+| URL do repositório | `GIT_REPO_URL` | *(vazio)* | URL HTTPS ou SSH do repositório |
+| Branch | `GIT_BRANCH` | `main` | Branch a clonar |
+| Token de acesso | `GIT_ACCESS_TOKEN` | *(vazio)* | PAT para repositórios privados (HTTPS) |
+| Caminho da chave SSH | `GIT_SSH_KEY_PATH` | *(vazio)* | Caminho para a chave privada SSH |
+| Atualizar no startup | `GIT_AUTO_UPDATE` | `false` | Clona/atualiza automaticamente ao iniciar |
+
+Botões disponíveis no painel:
+
+| Botão | Ação |
+|---|---|
+| **Salvar no .env** | Persiste as configurações no arquivo `.env` |
+| **Sincronizar Codebase** | Clona o repositório e reindexa (progresso em tempo real) |
+| **Limpar Codebase** | Remove `.codebase/` e o índice do ChromaDB |
 
 ### Painel ⚙ LLM
 
