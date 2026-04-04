@@ -12,7 +12,8 @@ import chromadb
 from flask import Flask, Response, jsonify, request, send_from_directory, stream_with_context
 
 from minorag.config import CHROMA_PATH, CODE_PATH, TOP_K
-from minorag.indexer import chunk_text, read_files
+from minorag.chunkers import chunk_by_language
+from minorag.indexer import read_files
 from minorag.ollama import embed, generate, generate_stream_iter
 from minorag.retriever import build_prompt
 
@@ -53,7 +54,8 @@ def api_index():
     id_counter = 0
 
     for path, content in docs:
-        chunks = chunk_text(content)
+        ext = os.path.splitext(path)[1].lower()
+        chunks = chunk_by_language(content, ext)
 
         for chunk in chunks:
             full_chunk = f"FILE: {path}\n\n{chunk}"

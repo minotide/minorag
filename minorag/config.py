@@ -5,8 +5,7 @@ FILE_EXTENSIONS = [
     ".java", ".py", ".js", ".ts", ".go", ".rs",
     ".c", ".cpp", ".h", ".cs", ".rb", ".php",
     ".kt", ".scala", ".swift", ".m",
-    ".sql", ".sh", ".yaml", ".yml", ".json", ".xml",
-    ".md", ".txt",
+    ".sql", ".sh", ".md",
 ]
 
 IGNORE_DIRS = [
