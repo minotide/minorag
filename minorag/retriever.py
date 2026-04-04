@@ -11,7 +11,7 @@ from minorag.config import CHROMA_PATH, TOP_K
 from minorag.ollama import embed, generate_stream
 
 
-def build_prompt(question, chunks):
+def build_prompt(question: str, chunks: str) -> str:
     """
     Constrói o prompt completo para envio ao modelo LLM.
 

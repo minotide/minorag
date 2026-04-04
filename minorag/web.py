@@ -55,7 +55,7 @@ def api_index():
     for path, content in docs:
         chunks = chunk_text(content)
 
-        for i, chunk in enumerate(chunks):
+        for chunk in chunks:
             full_chunk = f"FILE: {path}\n\n{chunk}"
             emb = embed(full_chunk)
 

@@ -5,6 +5,7 @@ os modelos configurados via API REST do Ollama.
 """
 
 import json
+from collections.abc import Iterator
 
 import requests
 
@@ -13,7 +14,7 @@ from minorag.config import EMBED_MODEL, LLM_MODEL, OLLAMA_URL
 _OFFLINE_MSG = "\nOllama não está respondendo. Inicie-o com:\n\n    ollama serve &\n"
 
 
-def embed(text):
+def embed(text: str) -> list[float]:
     """Gera o embedding vetorial de um texto usando o modelo de embeddings.
 
     @param text: Texto a ser convertido em vetor.
@@ -33,7 +34,7 @@ def embed(text):
         raise SystemExit(1)
 
 
-def generate(prompt):
+def generate(prompt: str) -> str:
     """
     Gera uma resposta completa para o prompt fornecido (sem streaming).
 
@@ -54,7 +55,7 @@ def generate(prompt):
         raise SystemExit(1)
 
 
-def generate_stream(prompt):
+def generate_stream(prompt: str) -> None:
     """
     Gera uma resposta em streaming e imprime os tokens diretamente no stdout.
 
@@ -82,7 +83,7 @@ def generate_stream(prompt):
         raise SystemExit(1)
 
 
-def generate_stream_iter(prompt):
+def generate_stream_iter(prompt: str) -> Iterator[str]:
     """
     Gera uma resposta em streaming e retorna os tokens como um gerador.
 

@@ -19,7 +19,7 @@ from minorag.config import (
 from minorag.ollama import embed
 
 
-def read_files(path):
+def read_files(path: str) -> list[tuple[str, str]]:
     """
     Lê recursivamente os arquivos de código do diretório informado.
 
@@ -29,7 +29,7 @@ def read_files(path):
     @param path: Caminho raiz para iniciar a leitura.
     @return: Lista de tuplas (caminho_absoluto, conteúdo) dos arquivos lidos.
     """
-    docs = []
+    docs: list[tuple[str, str]] = []
     for root, dirs, files in os.walk(path):
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
 
@@ -45,14 +45,14 @@ def read_files(path):
     return docs
 
 
-def chunk_text(text):
+def chunk_text(text: str) -> list[str]:
     """
     Divide um texto em chunks de tamanho fixo com sobreposição.
 
     @param text: Texto completo a ser dividido.
     @return: Lista de strings, cada uma com no máximo CHUNK_SIZE caracteres.
     """
-    chunks = []
+    chunks: list[str] = []
     start = 0
     while start < len(text):
         end = start + CHUNK_SIZE
