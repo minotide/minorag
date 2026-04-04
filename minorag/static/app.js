@@ -56,6 +56,11 @@ async function loadGitConfig() {
         document.getElementById("git-ssh").value = data.GIT_SSH_KEY_PATH || "";
         document.getElementById("git-auto-update").checked =
             (data.GIT_AUTO_UPDATE || "").toLowerCase() === "true";
+        if (data.env_warnings && data.env_warnings.length > 0) {
+            const statusEl = document.getElementById("git-status");
+            statusEl.textContent = ".env corrompido: " + data.env_warnings.join(" | ");
+            statusEl.className = "config-status-msg error";
+        }
     } catch (err) {
         console.error("Erro ao carregar config git:", err);
     }
@@ -165,6 +170,11 @@ async function loadLlmConfig() {
         document.getElementById("llm-temperature").value = data.OLLAMA_TEMPERATURE || "";
         document.getElementById("llm-repeat-penalty").value = data.OLLAMA_REPEAT_PENALTY || "";
         document.getElementById("llm-prompt-template").value = data.PROMPT_TEMPLATE || "";
+        if (data.env_warnings && data.env_warnings.length > 0) {
+            const statusEl = document.getElementById("llm-status");
+            statusEl.textContent = ".env corrompido: " + data.env_warnings.join(" | ");
+            statusEl.className = "config-status-msg error";
+        }
     } catch (err) {
         console.error("Erro ao carregar config LLM:", err);
     }
@@ -219,6 +229,11 @@ async function loadIndexingConfig() {
         document.getElementById("idx-ignore-dirs").value = data.IGNORE_DIRS || "";
         document.getElementById("idx-chunk-size").value = data.CHUNK_SIZE || "";
         document.getElementById("idx-chunk-overlap").value = data.CHUNK_OVERLAP || "";
+        if (data.env_warnings && data.env_warnings.length > 0) {
+            const statusEl = document.getElementById("indexing-status");
+            statusEl.textContent = ".env corrompido: " + data.env_warnings.join(" | ");
+            statusEl.className = "config-status-msg error";
+        }
     } catch (err) {
         console.error("Erro ao carregar config indexação:", err);
     }

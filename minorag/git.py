@@ -10,7 +10,6 @@ import subprocess
 from urllib.parse import urlparse, urlunparse
 
 from minorag.config import (
-    CHROMA_PATH,
     CODE_PATH,
     GIT_ACCESS_TOKEN,
     GIT_BRANCH,

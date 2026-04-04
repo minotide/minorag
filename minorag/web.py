@@ -7,6 +7,7 @@ e consulta ao índice via Server-Sent Events (SSE) com streaming de tokens.
 
 import json as _json
 import os
+from collections.abc import Iterator
 
 import chromadb
 from flask import Flask, Response, jsonify, request, stream_with_context
@@ -159,7 +160,7 @@ def api_query_stream():
     if not question:
         return jsonify({"error": "Pergunta vazia"}), 400
 
-    def event_stream():
+    def event_stream() -> Iterator[str]:
         client = chromadb.PersistentClient(path=CHROMA_PATH)
         try:
             collection = client.get_collection("codebase")
@@ -204,6 +205,45 @@ _INDEXING_ENV_KEYS = [
     "CHUNK_SIZE", "CHUNK_OVERLAP",
 ]
 
+_ALL_KNOWN_KEYS = set(_GIT_ENV_KEYS + _LLM_ENV_KEYS + _INDEXING_ENV_KEYS)
+
+
+def _check_env_integrity() -> list[str]:
+    """Detecta problemas no .env que indiquem corrupção manual."""
+    warnings: list[str] = []
+    if not os.path.exists(ENV_PATH):
+        return warnings
+
+    key_counts: dict[str, int] = {}
+    with open(ENV_PATH, encoding="utf-8") as f:
+        for lineno, line in enumerate(f, start=1):
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            if "=" not in stripped:
+                warnings.append(
+                    f"Linha {lineno} sem '=': {stripped[:60]!r}"
+                )
+                continue
+            key, _, value = stripped.partition("=")
+            key_counts[key] = key_counts.get(key, 0) + 1
+            # Detecta fusão de linhas: valor contém outro KEY= conhecido embutido
+            for known_key in _ALL_KNOWN_KEYS:
+                if known_key != key and f"{known_key}=" in value:
+                    warnings.append(
+                        f"Chave '{key}' tem valor corrompido: '{known_key}=' encontrado "
+                        f"dentro do valor (provável fusão de linhas). Edite o .env manualmente."
+                    )
+                    break
+
+    for key, count in key_counts.items():
+        if count > 1:
+            warnings.append(
+                f"Chave '{key}' está duplicada no .env ({count} ocorrências)."
+            )
+
+    return warnings
+
 
 def _read_env_vars() -> dict[str, str]:
     """Lê as variáveis de configuração Git diretamente do arquivo .env."""
@@ -227,6 +267,23 @@ def _save_env_vars(updates: dict[str, str]) -> None:
         with open(ENV_PATH, encoding="utf-8") as f:
             lines = f.readlines()
 
+    key_all_positions: dict[str, list[int]] = {}
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            k = stripped.split("=", 1)[0]
+            key_all_positions.setdefault(k, []).append(i)
+
+    indices_to_remove = {
+        idx
+        for positions in key_all_positions.values()
+        if len(positions) > 1
+        for idx in positions[:-1]
+    }
+    if indices_to_remove:
+        lines = [line for i, line in enumerate(
+            lines) if i not in indices_to_remove]
+
     key_positions: dict[str, int] = {}
     for i, line in enumerate(lines):
         stripped = line.strip()
@@ -239,6 +296,8 @@ def _save_env_vars(updates: dict[str, str]) -> None:
         if key in key_positions:
             lines[key_positions[key]] = entry
         else:
+            if lines and not lines[-1].endswith("\n"):
+                lines[-1] += "\n"
             lines.append(entry)
 
     with open(ENV_PATH, "w", encoding="utf-8") as f:
@@ -252,7 +311,7 @@ def _save_env_vars(updates: dict[str, str]) -> None:
 @app.route("/api/git/config", methods=["GET"])
 def api_git_config_get():
     """Retorna a configuração atual do Git lida do .env."""
-    return jsonify(_read_env_vars())
+    return jsonify({**_read_env_vars(), "env_warnings": _check_env_integrity()})
 
 
 @app.route("/api/git/config", methods=["POST"])
@@ -296,6 +355,7 @@ def api_llm_config_get():
         "OLLAMA_TEMPERATURE": str(_cfg.OLLAMA_OPTIONS.get("temperature", 0.2)),
         "OLLAMA_REPEAT_PENALTY": str(_cfg.OLLAMA_OPTIONS.get("repeat_penalty", 1.3)),
         "PROMPT_TEMPLATE": _cfg.PROMPT_TEMPLATE,
+        "env_warnings": _check_env_integrity(),
     })
 
 
@@ -350,6 +410,7 @@ def api_indexing_config_get():
         "IGNORE_DIRS": ",".join(_cfg.IGNORE_DIRS),
         "CHUNK_SIZE": str(_cfg.CHUNK_SIZE),
         "CHUNK_OVERLAP": str(_cfg.CHUNK_OVERLAP),
+        "env_warnings": _check_env_integrity(),
     })
 
 
@@ -381,9 +442,19 @@ def _sse(event_type: str, text: str) -> str:
     return f"data: {_json.dumps({'type': event_type, 'text': text})}\n\n"
 
 
-def _index_into_collection() -> int:
-    """Reindexa a codebase no ChromaDB e retorna o total de chunks."""
+def _index_into_collection_stream() -> Iterator[str]:
+    """Reindexa a codebase no ChromaDB emitindo eventos SSE de progresso."""
     docs = read_files(CODE_PATH)
+    total_files = len(docs)
+
+    all_chunks: list[tuple[str, str]] = []
+    for path, content in docs:
+        ext = os.path.splitext(path)[1].lower()
+        for chunk in chunk_by_language(content, ext):
+            all_chunks.append((path, chunk))
+
+    total_chunks = len(all_chunks)
+    yield _sse("log", f"{total_files} arquivo(s) encontrado(s) — {total_chunks} chunks para indexar...")
 
     client = chromadb.PersistentClient(path=CHROMA_PATH)
     try:
@@ -392,22 +463,18 @@ def _index_into_collection() -> int:
         pass
     collection = client.get_or_create_collection("codebase")
 
-    id_counter = 0
-    for path, content in docs:
-        ext = os.path.splitext(path)[1].lower()
-        chunks = chunk_by_language(content, ext)
-        for chunk in chunks:
-            full_chunk = f"FILE: {path}\n\n{chunk}"
-            emb = embed(full_chunk)
-            collection.add(
-                ids=[str(id_counter)],
-                embeddings=[emb],
-                documents=[full_chunk],
-                metadatas=[{"file": path}],
-            )
-            id_counter += 1
+    for i, (path, chunk) in enumerate(all_chunks, start=1):
+        full_chunk = f"FILE: {path}\n\n{chunk}"
+        emb = embed(full_chunk)
+        collection.add(
+            ids=[str(i - 1)],
+            embeddings=[emb],
+            documents=[full_chunk],
+            metadatas=[{"file": path}],
+        )
+        yield _sse("log", f"Indexando chunk {i}/{total_chunks}...")
 
-    return id_counter
+    yield _sse("done", f"Concluído! {total_chunks} chunks indexados de {total_files} arquivo(s).")
 
 
 @app.route("/api/git/sync", methods=["POST"])
@@ -418,7 +485,7 @@ def api_git_sync():
     branch: str | None = data.get("branch") or None
     token: str | None = data.get("token") or None
 
-    def event_stream():
+    def event_stream() -> Iterator[str]:
         from minorag.git import clone_repo
 
         yield _sse("log", "Clonando repositório...")
@@ -427,13 +494,9 @@ def api_git_sync():
             yield _sse("error", "Falha ao clonar. Verifique a URL e as credenciais.")
             return
 
-        yield _sse("log", "Indexando código...")
         try:
-            total = _index_into_collection()
+            yield from _index_into_collection_stream()
         except Exception as exc:
             yield _sse("error", f"Erro na indexação: {exc}")
-            return
-
-        yield _sse("done", f"Concluído! {total} chunks indexados.")
 
     return Response(stream_with_context(event_stream()), mimetype="text/event-stream")
