@@ -24,7 +24,7 @@ Este projeto segue a filosofia Minotide:
 > ```
 > Depois, faça logout/login.
 
-O modelo utilizado (`qwen2.5-coder:3b`) é leve (~2 GB) e roda bem em CPU. GPU não é obrigatória.
+O modelo utilizado (`qwen2.5-coder:3b`) é leve (~2 GB) e roda bem em CPU ***(GPU não é obrigatória)***.
 
 ---
 
