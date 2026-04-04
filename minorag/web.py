@@ -5,6 +5,7 @@ Expõe uma aplicação Flask com rotas para indexação de código
 e consulta ao índice via Server-Sent Events (SSE) com streaming de tokens.
 """
 
+import re as _re
 import json as _json
 import os
 from collections.abc import Iterator
@@ -512,16 +513,30 @@ def api_env_reset():
 # Rota: Limpar codebase e índice ChromaDB
 # ---------------------------------------------------------------------------
 
+_CHROMA_SEGMENT_RE = _re.compile(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+)
+
+
 @app.route("/api/codebase/clear", methods=["POST"])
 def api_codebase_clear():
-    """Remove .codebase/ e apaga o diretório .chromadb/ completamente."""
+    """Limpa a coleção do ChromaDB e o diretório .codebase/."""
     import shutil
 
-    # Limpa diretório .chromadb/ (dados físicos do ChromaDB)
-    if os.path.exists(CHROMA_PATH):
-        shutil.rmtree(CHROMA_PATH)
+    # Remove a coleção via API do ChromaDB (mantém o chroma.sqlite3 íntegro)
+    try:
+        client = chromadb.PersistentClient(path=CHROMA_PATH)
+        client.delete_collection("codebase")
+    except Exception:
+        pass
 
-    # Limpa diretório .codebase/
+    # Remove subpastas UUID de segmentos HNSW órfãos
+    if os.path.exists(CHROMA_PATH):
+        for entry in os.scandir(CHROMA_PATH):
+            if entry.is_dir() and _CHROMA_SEGMENT_RE.match(entry.name):
+                shutil.rmtree(entry.path)
+
+    # Limpa .codebase/ e recria a pasta vazia
     if os.path.exists(CODE_PATH):
         shutil.rmtree(CODE_PATH)
     os.makedirs(CODE_PATH, exist_ok=True)

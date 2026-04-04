@@ -1,4 +1,5 @@
-.chromadb/
+.chromadb/*
+!.chromadb/.gitkeep
 __pycache__/
 *.pyc
 .codebase/*
