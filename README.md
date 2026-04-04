@@ -80,25 +80,6 @@ Escolha a opção `3`. Acesse `http://localhost:5000` no navegador.
 
 ---
 
-## 💬 Exemplos de perguntas
-
-```text
-- Explique a arquitetura geral do projeto
-- Quais são os principais módulos e suas responsabilidades?
-- Quais endpoints ou rotas existem?
-- Quais funções acessam o banco de dados?
-- Como funciona a autenticação no sistema?
-- Quais dependências externas o projeto utiliza?
-- Onde está a lógica de negócio principal?
-- Quais testes existem e o que eles cobrem?
-- Existe tratamento de erros centralizado?
-- Como os dados são validados antes de persistir?
-- Quais configurações o projeto espera (env vars, configs)?
-- Quais pontos do código poderiam ser melhorados?
-```
-
----
-
 ## ⚙️ Configuração
 
 Edite `minorag/config.py` para ajustar:

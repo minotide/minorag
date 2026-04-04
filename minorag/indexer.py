@@ -14,6 +14,7 @@ from minorag.config import (
     CODE_PATH,
     FILE_EXTENSIONS,
     IGNORE_DIRS,
+    INCLUDE_FILENAMES,
 )
 from minorag.ollama import embed
 
@@ -33,7 +34,7 @@ def read_files(path: str) -> list[tuple[str, str]]:
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
 
         for file in files:
-            if any(file.endswith(ext) for ext in FILE_EXTENSIONS):
+            if any(file.endswith(ext) for ext in FILE_EXTENSIONS) or file in INCLUDE_FILENAMES:
                 full_path = os.path.join(root, file)
                 try:
                     with open(full_path, "r", encoding="utf-8") as f:

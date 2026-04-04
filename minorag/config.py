@@ -5,7 +5,11 @@ FILE_EXTENSIONS = [
     ".java", ".py", ".js", ".ts", ".go", ".rs",
     ".c", ".cpp", ".h", ".cs", ".rb", ".php",
     ".kt", ".scala", ".swift", ".m",
-    ".sql", ".sh", ".md",
+    ".sql", ".sh",
+]
+
+INCLUDE_FILENAMES = [
+    "architecture.md",
 ]
 
 IGNORE_DIRS = [
@@ -29,22 +33,17 @@ OLLAMA_OPTIONS: dict[str, int | float] = {
     "num_thread": 8,
     "num_batch": 512,
     "temperature": 0.2,
+    "repeat_penalty": 1.3,
 }
 
 PROMPT_TEMPLATE = """
-You are a senior software engineer answering questions about a codebase.
+You are a code assistant. Answer the question using ONLY the code snippets provided below.
+If the answer is not present in the snippets, say: "I don't have enough context to answer this accurately."
+Do not use any knowledge beyond what is shown.
 
-RULES:
-- Answer ONLY based on the code context provided below.
-- If the context does not contain enough information to answer, say "I don't have enough context to answer this accurately."
+Code snippets: {chunks}
 
-Context:
-----------------
-{chunks}
-----------------
+Question: {question}
 
-Question:
-{question}
-
-Answer clearly and technically
+Answer:
 """
