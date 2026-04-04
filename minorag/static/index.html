@@ -34,47 +34,125 @@
         </div>
         <div class="config-panel-body">
             <div class="form-group">
-                <label for="llm-url">URL do Ollama</label>
+                <div class="label-row">
+                    <label for="llm-url">URL do Ollama</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Endereço da API do Ollama. Altere somente se estiver usando um Ollama
+                            remoto ou em outra porta.</span>
+                    </span>
+                </div>
                 <input id="llm-url" type="text" placeholder="http://localhost:11434">
             </div>
             <div class="form-group">
-                <label for="llm-embed-model">Modelo de Embedding</label>
+                <div class="label-row">
+                    <label for="llm-embed-model">Modelo de Embedding</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Modelo para converter texto em vetores numéricos. Padrão:
+                            nomic-embed-text. Trocar exige re-indexação completa.</span>
+                    </span>
+                </div>
                 <input id="llm-embed-model" type="text" placeholder="nomic-embed-text">
             </div>
             <div class="form-group">
-                <label for="llm-model">Modelo LLM</label>
+                <div class="label-row">
+                    <label for="llm-model">Modelo LLM</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Modelo para gerar respostas. Padrão: qwen2.5-coder:3b (~2 GB, CPU).
+                            Outros: qwen2.5-coder:7b, llama3.2, codellama.</span>
+                    </span>
+                </div>
                 <input id="llm-model" type="text" placeholder="qwen2.5-coder:3b">
             </div>
             <div class="form-group">
-                <label for="llm-top-k">Top K (chunks por consulta)</label>
+                <div class="label-row">
+                    <label for="llm-top-k">Top K (chunks por consulta)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Chunks recuperados do índice por consulta. Mais chunks = mais
+                            contexto, mas aumenta o tempo de resposta. Referência: 3 rápido · 5 equilibrado · 8
+                            detalhado · 12 máximo (exige num_ctx alto).</span>
+                    </span>
+                </div>
                 <input id="llm-top-k" type="number" min="1" max="50" placeholder="8">
             </div>
             <div class="form-group">
-                <label for="llm-num-ctx">Contexto (num_ctx)</label>
+                <div class="label-row">
+                    <label for="llm-num-ctx">Contexto (num_ctx)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Janela de contexto em tokens. Deve comportar os chunks do Top K.
+                            Referência: num_ctx ≥ Top K × 1000.</span>
+                    </span>
+                </div>
                 <input id="llm-num-ctx" type="number" min="512" placeholder="8192">
             </div>
             <div class="form-group">
-                <label for="llm-num-predict">Tokens gerados (num_predict)</label>
+                <div class="label-row">
+                    <label for="llm-num-predict">Tokens gerados (num_predict)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Limite máximo de tokens na resposta gerada. Aumente para respostas
+                            mais longas e detalhadas.</span>
+                    </span>
+                </div>
                 <input id="llm-num-predict" type="number" min="64" placeholder="1024">
             </div>
             <div class="form-group">
-                <label for="llm-num-thread">Threads (num_thread)</label>
+                <div class="label-row">
+                    <label for="llm-num-thread">Threads (num_thread)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Threads de CPU usadas pelo Ollama. Recomendado: número de núcleos
+                            físicos do processador.</span>
+                    </span>
+                </div>
                 <input id="llm-num-thread" type="number" min="1" placeholder="8">
             </div>
             <div class="form-group">
-                <label for="llm-num-batch">Batch (num_batch)</label>
+                <div class="label-row">
+                    <label for="llm-num-batch">Batch (num_batch)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Tamanho do lote no prefill (processamento do prompt). Valores maiores
+                            = prefill mais rápido, mais uso de memória.</span>
+                    </span>
+                </div>
                 <input id="llm-num-batch" type="number" min="1" placeholder="512">
             </div>
             <div class="form-group">
-                <label for="llm-temperature">Temperature</label>
+                <div class="label-row">
+                    <label for="llm-temperature">Temperature</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Criatividade da resposta. 0 = determinístico e preciso. Para código,
+                            mantenha entre 0.1 e 0.3.</span>
+                    </span>
+                </div>
                 <input id="llm-temperature" type="number" min="0" max="2" step="0.05" placeholder="0.2">
             </div>
             <div class="form-group">
-                <label for="llm-repeat-penalty">Repeat Penalty</label>
+                <div class="label-row">
+                    <label for="llm-repeat-penalty">Repeat Penalty</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Penalidade para evitar repetições na resposta. 1.0 = sem penalidade.
+                            1.3 = padrão recomendado.</span>
+                    </span>
+                </div>
                 <input id="llm-repeat-penalty" type="number" min="0.5" max="2" step="0.05" placeholder="1.3">
             </div>
             <div class="form-group full-col">
-                <label for="llm-prompt-template">Prompt Template</label>
+                <div class="label-row">
+                    <label for="llm-prompt-template">Prompt Template</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Instruções enviadas ao LLM a cada pergunta. Os marcadores {chunks} e
+                            {question} são obrigatórios e substituídos automaticamente.</span>
+                    </span>
+                </div>
                 <textarea id="llm-prompt-template" rows="12"></textarea>
                 <span class="hint">Use <code>{chunks}</code> e <code>{question}</code> como marcadores
                     obrigatórios.</span>
@@ -99,25 +177,60 @@
         </div>
         <div class="config-panel-body">
             <div class="form-group full-col">
-                <label for="idx-extensions">Extensões de arquivo (separadas por vírgula)</label>
+                <div class="label-row">
+                    <label for="idx-extensions">Extensões de arquivo (separadas por vírgula)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Tipos de arquivo lidos e indexados. Adicione extensões específicas do
+                            seu projeto se necessário.</span>
+                    </span>
+                </div>
                 <input id="idx-extensions" type="text" placeholder=".java,.py,.js,.ts,...">
                 <span class="hint">Arquivos com estas extensões serão indexados.</span>
             </div>
             <div class="form-group full-col">
-                <label for="idx-include-names">Nomes de arquivo incluídos (separados por vírgula)</label>
+                <div class="label-row">
+                    <label for="idx-include-names">Nomes de arquivo incluídos (separados por vírgula)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Arquivos incluídos pelo nome exato, independente da extensão. Útil
+                            para arquivos como architecture.md que descrevem o projeto.</span>
+                    </span>
+                </div>
                 <input id="idx-include-names" type="text" placeholder="architecture.md">
                 <span class="hint">Arquivos com estes nomes exatos serão sempre incluídos.</span>
             </div>
             <div class="form-group full-col">
-                <label for="idx-ignore-dirs">Diretórios ignorados (separados por vírgula)</label>
+                <div class="label-row">
+                    <label for="idx-ignore-dirs">Diretórios ignorados (separados por vírgula)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Pastas excluídas da varredura. Inclua dependências, builds e arquivos
+                            gerados para não poluir o índice.</span>
+                    </span>
+                </div>
                 <input id="idx-ignore-dirs" type="text" placeholder="target,.git,node_modules,...">
             </div>
             <div class="form-group">
-                <label for="idx-chunk-size">Tamanho do chunk (caracteres)</label>
+                <div class="label-row">
+                    <label for="idx-chunk-size">Tamanho do chunk (caracteres)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Caracteres por fragmento de código indexado. Menor (~800) = mais
+                            preciso, mais chunks. Maior (~2000) = mais contexto por resultado.</span>
+                    </span>
+                </div>
                 <input id="idx-chunk-size" type="number" min="200" placeholder="1500">
             </div>
             <div class="form-group">
-                <label for="idx-chunk-overlap">Sobreposição do chunk (caracteres)</label>
+                <div class="label-row">
+                    <label for="idx-chunk-overlap">Sobreposição do chunk (caracteres)</label>
+                    <span class="tooltip-wrap">
+                        <button class="tooltip-btn" type="button" aria-label="Mais informações">?</button>
+                        <span class="tooltip-box">Caracteres repetidos entre chunks consecutivos. Preserva contexto nas
+                            fronteiras entre fragmentos. Recomendado: 10–15% do chunk size.</span>
+                    </span>
+                </div>
                 <input id="idx-chunk-overlap" type="number" min="0" placeholder="200">
             </div>
             <div class="config-actions">
