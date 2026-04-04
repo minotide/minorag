@@ -172,10 +172,103 @@ minorag/
 
 ## ⚡ Melhorias possíveis
 
-- Aumentar `TOP_K` para mais contexto nas respostas
-- Personalizar o prompt de resposta
-- Adicionar um `architecture.md` como contexto extra
 - Habilitar GPU para modelos maiores (ver seção abaixo)
+
+### 🔢 Aumentar `TOP_K` para mais contexto nas respostas
+
+`TOP_K` define quantos chunks do índice são recuperados e enviados como contexto para o LLM a cada pergunta. O valor padrão é `5`.
+
+Aumentar esse número pode melhorar a qualidade das respostas em projetos grandes, onde a informação relevante está espalhada em vários arquivos. Por outro lado, cada chunk extra aumenta o número de tokens no prompt, o que impacta diretamente o tempo de resposta (prefill) e o uso de memória.
+
+**Referência prática:**
+
+| `TOP_K` | Uso de contexto estimado | Quando usar |
+| ------- | ------------------------ | ----------- |
+| `3`     | ~3.000 chars             | Projetos pequenos, respostas rápidas |
+| `5`     | ~5.000 chars *(padrão)*  | Equilíbrio entre qualidade e velocidade |
+| `8`     | ~8.000 chars             | Projetos grandes, perguntas amplas |
+| `12`    | ~12.000 chars            | Máxima cobertura — exige `num_ctx` alto |
+
+> Se aumentar `TOP_K` para `8` ou mais, aumente `num_ctx` proporcionalmente em `OLLAMA_OPTIONS` para garantir que o modelo consiga processar todo o contexto sem truncar.
+
+### ✏️ Personalizar o prompt de resposta
+
+O prompt enviado ao LLM é construído pela função `build_prompt` em `minorag/retriever.py`. Editar essa função permite ajustar o comportamento do modelo sem mudar nada mais.
+
+**Prompt atual:**
+
+```python
+def build_prompt(question: str, chunks: str) -> str:
+    return f"""You are a senior software engineer.
+
+Use the code context below to answer.
+
+Context:
+----------------
+{chunks}
+----------------
+
+Question:
+{question}
+
+Answer clearly and technically."""
+```
+
+**Exemplos de customização:**
+
+Responder em português:
+```python
+return f"""Você é um engenheiro de software sênior.
+Use o contexto de código abaixo para responder em português.
+...
+```
+
+Focar em um domínio específico:
+```python
+return f"""You are a senior backend engineer specialized in Java Spring Boot.
+Prioritize explaining business rules and data flow.
+...
+```
+
+Forçar um formato de resposta:
+```python
+return f"""You are a senior software engineer.
+Always structure your answer in three sections:
+1. Direct answer
+2. Code references (file + line if possible)
+3. Caveats or edge cases
+...
+```
+
+As variáveis `{chunks}` (contexto recuperado do índice) e `{question}` (pergunta do usuário) devem sempre estar presentes no prompt.
+
+### 📄 `architecture.md` como contexto extra
+
+Uma técnica eficaz de RAG é criar manualmente um arquivo descrevendo a arquitetura do projeto indexado — informações que o código sozinho não deixa claro para a LLM, como intenções de design, padrões adotados e fluxos principais.
+
+Crie o arquivo dentro da pasta do projeto em `codebase/`:
+
+```markdown
+# architecture.md
+
+## Visão geral
+Sistema de e-commerce com arquitetura hexagonal...
+
+## Módulos principais
+- `domain/` — regras de negócio puras, sem dependências externas
+- `infra/` — adaptadores de banco, filas, APIs externas
+- `api/` — controllers REST, validação de entrada
+
+## Decisões de design
+- Repository pattern para abstrair o banco
+- CQRS separando leitura e escrita em OrderService
+- Autenticação via JWT stateless
+
+## Fluxo principal
+Requisição → AuthMiddleware → Controller → UseCase → Repository → DB
+```
+
+Como o indexer já processa arquivos `.md`, esse arquivo é incluído automaticamente nos embeddings ao rodar a indexação. Quando você faz perguntas sobre arquitetura ou design, o chunk do `architecture.md` tem alta probabilidade de ser retornado no `TOP_K` junto com o código, dando ao LLM contexto de intenção que não está explícito no fonte.
 
 ---
 
