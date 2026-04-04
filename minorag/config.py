@@ -93,7 +93,7 @@ CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "1500"))
 CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "200"))
 
 # ---------------------------------------------------------------------------
-# Interface web
+# Web
 # ---------------------------------------------------------------------------
 
 WEB_PORT: int = int(os.getenv("WEB_PORT", "5000"))
