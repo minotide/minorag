@@ -5,13 +5,51 @@ os modelos configurados via API REST do Ollama.
 """
 
 import json
+import subprocess
+import time
 from collections.abc import Iterator
 
 import requests
 
 from minorag.config import EMBED_MODEL, LLM_MODEL, OLLAMA_OPTIONS, OLLAMA_URL
 
-_OFFLINE_MSG = "\nOllama não está respondendo. Inicie-o com:\n\n    ollama serve &\n"
+
+def _try_start_ollama() -> bool:
+    """Tenta iniciar o servidor Ollama automaticamente via subprocess."""
+    print("\nOllama não está respondendo. Tentando iniciar automaticamente...")
+    try:
+        subprocess.Popen(
+            ["ollama", "serve"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except FileNotFoundError:
+        print("Ollama não encontrado no sistema. Instale em: https://ollama.ai")
+        return False
+
+    print("Aguardando Ollama iniciar", end="", flush=True)
+    for _ in range(15):
+        time.sleep(2)
+        print(".", end="", flush=True)
+        try:
+            requests.get(OLLAMA_URL, timeout=3)
+            print(" pronto!")
+            return True
+        except requests.exceptions.ConnectionError:
+            continue
+
+    print("\nNão foi possível iniciar o Ollama automaticamente.")
+    print("Inicie manualmente com: ollama serve &")
+    return False
+
+
+def ensure_ollama_running() -> bool:
+    """Verifica se Ollama está rodando e tenta iniciar automaticamente se necessário."""
+    try:
+        requests.get(OLLAMA_URL, timeout=5)
+        return True
+    except requests.exceptions.ConnectionError:
+        return _try_start_ollama()
 
 
 def embed(text: str) -> list[float]:
@@ -22,19 +60,20 @@ def embed(text: str) -> list[float]:
     @return: Lista de floats representando o embedding.
     @raises SystemExit: Se o Ollama não estiver acessível.
     """
-    try:
+    def _do_request():
         response = requests.post(
             f"{OLLAMA_URL}/api/embeddings",
-            json={
-                "model": EMBED_MODEL,
-                "prompt": text
-            },
+            json={"model": EMBED_MODEL, "prompt": text},
             timeout=120,
         )
         response.raise_for_status()
         return response.json()["embedding"]
+
+    try:
+        return _do_request()
     except requests.exceptions.ConnectionError:
-        print(_OFFLINE_MSG)
+        if _try_start_ollama():
+            return _do_request()
         raise SystemExit(1)
 
 
@@ -46,21 +85,25 @@ def generate(prompt: str) -> str:
     @return: String com a resposta completa gerada pelo modelo.
     @raises SystemExit: Se o Ollama não estiver acessível.
     """
-    try:
+    def _do_request():
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
             json={
                 "model": LLM_MODEL,
                 "prompt": prompt,
                 "stream": False,
-                "options": OLLAMA_OPTIONS
+                "options": OLLAMA_OPTIONS,
             },
             timeout=300,
         )
         response.raise_for_status()
         return response.json()["response"]
+
+    try:
+        return _do_request()
     except requests.exceptions.ConnectionError:
-        print(_OFFLINE_MSG)
+        if _try_start_ollama():
+            return _do_request()
         raise SystemExit(1)
 
 
@@ -71,14 +114,14 @@ def generate_stream(prompt: str) -> None:
     @param prompt: Texto de entrada enviado ao modelo LLM.
     @raises SystemExit: Se o Ollama não estiver acessível.
     """
-    try:
+    def _do_stream():
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
             json={
                 "model": LLM_MODEL,
                 "prompt": prompt,
                 "stream": True,
-                "options": OLLAMA_OPTIONS
+                "options": OLLAMA_OPTIONS,
             },
             timeout=300,
             stream=True,
@@ -92,9 +135,14 @@ def generate_stream(prompt: str) -> None:
                     print(token, end="", flush=True)
                 if data.get("done"):
                     break
+
+    try:
+        _do_stream()
     except requests.exceptions.ConnectionError:
-        print(_OFFLINE_MSG)
-        raise SystemExit(1)
+        if _try_start_ollama():
+            _do_stream()
+        else:
+            raise SystemExit(1)
 
 
 def generate_stream_iter(prompt: str) -> Iterator[str]:
@@ -104,26 +152,26 @@ def generate_stream_iter(prompt: str) -> Iterator[str]:
     @param prompt: Texto de entrada enviado ao modelo LLM.
     @return: Gerador de strings, cada uma contendo um token da resposta.
     """
-    try:
-        response = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": LLM_MODEL,
-                "prompt": prompt,
-                "stream": True,
-                "options": OLLAMA_OPTIONS
-            },
-            timeout=300,
-            stream=True,
-        )
-        response.raise_for_status()
-        for line in response.iter_lines():
-            if line:
-                data = json.loads(line)
-                token = data.get("response", "")
-                if token:
-                    yield token
-                if data.get("done"):
-                    break
-    except requests.exceptions.ConnectionError:
-        yield _OFFLINE_MSG
+    if not ensure_ollama_running():
+        raise SystemExit(1)
+
+    response = requests.post(
+        f"{OLLAMA_URL}/api/generate",
+        json={
+            "model": LLM_MODEL,
+            "prompt": prompt,
+            "stream": True,
+            "options": OLLAMA_OPTIONS,
+        },
+        timeout=300,
+        stream=True,
+    )
+    response.raise_for_status()
+    for line in response.iter_lines():
+        if line:
+            data = json.loads(line)
+            token = data.get("response", "")
+            if token:
+                yield token
+            if data.get("done"):
+                break

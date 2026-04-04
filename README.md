@@ -1,6 +1,6 @@
 # 🧠 minorag
 
-**Busca inteligente para código usando Ollama + ChromaDB.**
+**Pergunte ao seu código usando Ollama + ChromaDB.**
 
 Este projeto segue a filosofia Minotide:
 
@@ -37,52 +37,43 @@ O modelo utilizado (`qwen2.5-coder:3b`) é leve (~2 GB) e roda bem em CPU ***(GP
 
 O servidor Ollama inicia automaticamente com o container.
 
-> **Fallback:** se o Ollama não estiver respondendo, inicie manualmente no terminal:
-> ```bash
-> ollama serve &
-> ```
-
 ---
 
 ## 🔧 Como usar
 
-> Suporta: `.java` `.py` `.js` `.ts` `.go` `.rs` `.c` `.cpp` `.cs` `.rb` `.php` `.kt` `.scala` `.swift` `.sql` `.sh` `.yaml` `.json` `.xml` `.md` e mais. Configure em `config.py`.
+> Suporta: `.java` `.py` `.js` `.ts` `.go` `.rs` `.c` `.cpp` `.cs` `.rb` `.php` `.kt` `.scala` `.swift` `.sql` `.sh` `.yaml` `.json` `.xml` `.md` e mais. <br> Configure em `config.py`.
 
-### 1. Adicionar código
+Após abrir o projeto no container, acesse **http://localhost:5000** — a interface web abre automaticamente no navegador.
 
-Clone o repositório que deseja analisar para dentro da pasta `codebase/`:
+### 1. Configurar repositório
 
-```bash
-git clone https://github.com/usuario/repo.git codebase/repo
-```
+Abra o painel **⚙ Repositório** no canto superior direito e informe:
 
-### 2. Indexar código
+- **URL** do repositório Git (HTTPS ou SSH)
+- **Branch** desejada (padrão: `main`)
+- **Token de acesso** para repositórios privados (opcional)
+- **Caminho chave SSH** para autenticação (opcional, ex: `~/.ssh/id_rsa`)
+- Clique em **Salvar no .env** para guardar as configurações. (São salvas **no arquivo `.env` do projeto**, dentro do seu container.)
 
-```bash
-python main.py
-```
+> Não se esqueça de manter no .gitignore o arquivo .env para não vazar suas credenciais.
 
-Escolha a opção `1`. Isso vai ler os arquivos, gerar embeddings e armazenar no ChromaDB.
+### 2. Sincronizar Codebase
+
+Clique em **Sincronizar Codebase** para clonar o repositório e gerar o índice de busca automaticamente.
+
+> Todo o processamento é local: o código fica em `codebase/`, os embeddings em `.chromadb/` — nada sai do seu container.
 
 ### 3. Fazer perguntas
 
-**Via terminal:**
-```bash
-python main.py
-```
-Escolha a opção `2`. Digite suas perguntas. Use `exit` para sair.
-
-**Via interface web:**
-```bash
-python main.py
-```
-Escolha a opção `3`. Acesse `http://localhost:5000` no navegador.
+Digite sua pergunta no campo de texto e pressione **Enter** ou clique em **Enviar**.
 
 ---
 
 ## ⚙️ Configuração
 
-Edite `minorag/config.py` para ajustar:
+As configurações do repositório Git são feitas pela interface web (painel **⚙ Repositório**) e salvas automaticamente no arquivo `.env` do projeto.
+
+Para ajustes avançados de modelos e performance, edite `minorag/config.py`:
 
 ### Indexação
 

@@ -11,8 +11,53 @@
 <body>
     <header>
         <h1>minorag <span>pergunte ao seu código</span></h1>
-        <button id="btn-index" onclick="indexCode()">Indexar codebase</button>
+        <div class="header-actions">
+            <button id="btn-git" onclick="toggleGitPanel()">⚙ Repositório</button>
+        </div>
     </header>
+
+    <!-- Painel de configuração Git -->
+    <div id="git-panel" class="git-panel hidden">
+        <div class="git-panel-header">
+            <h2>Repositório Git</h2>
+            <button class="close-btn" onclick="toggleGitPanel()">×</button>
+        </div>
+        <div class="git-panel-body">
+            <div class="form-group">
+                <label for="git-url">URL do repositório *</label>
+                <input id="git-url" type="text" placeholder="https://github.com/usuario/projeto.git">
+            </div>
+            <div class="form-group">
+                <label for="git-branch">Branch *</label>
+                <input id="git-branch" type="text" placeholder="main">
+            </div>
+            <div class="form-group">
+                <label for="git-token">Token de acesso pessoal (opcional)</label>
+                <input id="git-token" type="password" placeholder="Para repositórios privados (HTTPS)">
+                <span class="hint">GitHub: Settings → Developer settings → Personal access tokens</span>
+            </div>
+            <div class="form-group">
+                <label for="git-ssh">Caminho da Chave SSH (opcional)</label>
+                <input id="git-ssh" type="text" placeholder="~/.ssh/id_rsa">
+                <span class="hint">Usado quando a URL começa com git@</span>
+            </div>
+            <div class="form-group checkbox-group">
+                <input id="git-auto-update" type="checkbox">
+                <label for="git-auto-update">Atualizar repositório automaticamente no startup</label>
+            </div>
+            <div class="git-actions">
+                <button id="btn-save-git" onclick="saveGitConfig()"
+                    title="Salva as configurações no arquivo .env do projeto.">Salvar no .env</button>
+                <button id="btn-sync" onclick="gitSync()"
+                    title="Clona repositório e gera os índices de busca.">Sincronizar Codebase</button>
+            </div>
+            <div class="git-security-note">
+                Configurações, codebase e índices são salvos <strong>apenas localmente</strong> no arquivo
+                <code>.env</code> e nos diretórios <code>.codebase</code> e <code>.chromadb</code> do projeto.
+            </div>
+            <div id="git-status" class="git-status-msg"></div>
+        </div>
+    </div>
 
     <div id="chat">
         <div class="empty-state">
@@ -30,7 +75,6 @@
         const chat = document.getElementById("chat");
         const input = document.getElementById("question");
         const btnSend = document.getElementById("btn-send");
-        const btnIndex = document.getElementById("btn-index");
         let hasMessages = false;
 
         function addMsg(text, cls) {
@@ -46,8 +90,6 @@
             return div;
         }
 
-
-
         function handleKey(e) {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -55,27 +97,120 @@
             }
         }
 
-        async function indexCode() {
-            btnIndex.disabled = true;
-            btnIndex.textContent = "Indexando...";
-            const msg = addMsg("Indexando código... isso pode levar alguns minutos.", "system");
+        // ---- Git Panel ----
+
+        async function toggleGitPanel() {
+            const panel = document.getElementById("git-panel");
+            const opening = panel.classList.toggle("hidden");
+            // classList.toggle retorna true quando a classe FOI adicionada (fechou)
+            if (!opening) {
+                await loadGitConfig();
+            }
+        }
+
+        async function loadGitConfig() {
+            try {
+                const res = await fetch("/api/git/config");
+                const data = await res.json();
+                document.getElementById("git-url").value = data.GIT_REPO_URL || "";
+                document.getElementById("git-branch").value = data.GIT_BRANCH || "";
+                document.getElementById("git-token").value = data.GIT_ACCESS_TOKEN || "";
+                document.getElementById("git-ssh").value = data.GIT_SSH_KEY_PATH || "";
+                document.getElementById("git-auto-update").checked =
+                    (data.GIT_AUTO_UPDATE || "").toLowerCase() === "true";
+            } catch (err) {
+                console.error("Erro ao carregar config git:", err);
+            }
+        }
+
+        async function saveGitConfig() {
+            const btn = document.getElementById("btn-save-git");
+            const statusEl = document.getElementById("git-status");
+            btn.disabled = true;
+            btn.textContent = "Salvando...";
+            statusEl.textContent = "";
+            statusEl.className = "git-status-msg";
 
             try {
-                const res = await fetch("/api/index", { method: "POST" });
+                const res = await fetch("/api/git/config", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        GIT_REPO_URL: document.getElementById("git-url").value,
+                        GIT_BRANCH: document.getElementById("git-branch").value,
+                        GIT_ACCESS_TOKEN: document.getElementById("git-token").value,
+                        GIT_SSH_KEY_PATH: document.getElementById("git-ssh").value,
+                        GIT_AUTO_UPDATE: document.getElementById("git-auto-update").checked ? "true" : "false",
+                    }),
+                });
                 const data = await res.json();
-
-                if (res.ok) {
-                    addMsg(data.message, "system");
-                } else {
-                    addMsg(data.error || "Erro na indexação", "system error");
-                }
+                statusEl.textContent = res.ok ? "✓ " + data.message : "✗ " + (data.error || "Erro ao salvar");
+                statusEl.className = "git-status-msg " + (res.ok ? "success" : "error");
             } catch (err) {
-                addMsg("Erro de conexão: " + err.message, "system error");
+                statusEl.textContent = "✗ Erro: " + err.message;
+                statusEl.className = "git-status-msg error";
             }
 
-            btnIndex.disabled = false;
-            btnIndex.textContent = "Indexar codebase";
+            btn.disabled = false;
+            btn.textContent = "Salvar";
         }
+
+        async function gitSync() {
+            const btn = document.getElementById("btn-sync");
+            const statusEl = document.getElementById("git-status");
+            btn.disabled = true;
+            btn.textContent = "Sincronizando...";
+            statusEl.textContent = "";
+            statusEl.className = "git-status-msg";
+
+            const payload = {
+                repo_url: document.getElementById("git-url").value,
+                branch: document.getElementById("git-branch").value,
+                token: document.getElementById("git-token").value,
+            };
+
+            try {
+                const response = await fetch("/api/git/sync", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (!line.startsWith("data: ")) continue;
+                        const data = JSON.parse(line.slice(6));
+                        if (data.type === "log") {
+                            statusEl.textContent = data.text;
+                        } else if (data.type === "done") {
+                            statusEl.textContent = "✓ " + data.text;
+                            statusEl.className = "git-status-msg success";
+                        } else if (data.type === "error") {
+                            statusEl.textContent = "✗ " + data.text;
+                            statusEl.className = "git-status-msg error";
+                        }
+                    }
+                }
+            } catch (err) {
+                statusEl.textContent = "✗ Erro: " + err.message;
+                statusEl.className = "git-status-msg error";
+            }
+
+            btn.disabled = false;
+            btn.textContent = "Sincronizar Codebase";
+        }
+
+        // ---- Chat ----
 
         async function sendQuestion() {
             const question = input.value.trim();
@@ -139,6 +274,10 @@
             this.style.height = Math.min(this.scrollHeight, 120) + "px";
         });
     </script>
+</body>
+
+</html>
+
 </body>
 
 </html>

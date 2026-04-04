@@ -3,6 +3,15 @@
     "image": "mcr.microsoft.com/devcontainers/python:3.12",
     "runArgs": [],
     "features": {},
+    "forwardPorts": [
+        5000
+    ],
+    "portsAttributes": {
+        "5000": {
+            "label": "minorag web",
+            "onAutoForward": "openBrowser"
+        }
+    },
     "customizations": {
         "vscode": {
             "extensions": [
@@ -19,6 +28,7 @@
     },
     "postCreateCommand": "bash .devcontainer/setup.sh",
     "postStartCommand": "nohup ollama serve > /tmp/ollama.log 2>&1 &",
+    "postAttachCommand": "cd /workspaces/minorag && pip install -q -r requirements.txt && nohup python main.py > /tmp/minorag.log 2>&1 &",
     "mounts": [],
     "remoteUser": "vscode"
 }

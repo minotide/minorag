@@ -1,3 +1,13 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+_ENV_PATH = Path(__file__).parent.parent / ".env"
+ENV_PATH = str(_ENV_PATH)
+
+load_dotenv(_ENV_PATH)
+
 CODE_PATH = "./codebase"
 CHROMA_PATH = "./.chromadb"
 
@@ -35,6 +45,17 @@ OLLAMA_OPTIONS: dict[str, int | float] = {
     "temperature": 0.2,
     "repeat_penalty": 1.3,
 }
+
+# Interface web
+WEB_PORT = int(os.getenv("WEB_PORT", "5000"))
+
+# Repositório Git
+GIT_REPO_URL = os.getenv("GIT_REPO_URL", "")
+GIT_BRANCH = os.getenv("GIT_BRANCH", "main")
+GIT_AUTO_UPDATE = os.getenv(
+    "GIT_AUTO_UPDATE", "false").lower() in ("1", "true", "yes")
+GIT_ACCESS_TOKEN = os.getenv("GIT_ACCESS_TOKEN", "")
+GIT_SSH_KEY_PATH = os.getenv("GIT_SSH_KEY_PATH", "")
 
 PROMPT_TEMPLATE = """
 You are a code assistant. Answer the question using ONLY the code snippets provided below.
