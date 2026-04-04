@@ -14,12 +14,20 @@ IGNORE_DIRS = [
     "__pycache__", ".venv", "dist", "build"
 ]
 
-CHUNK_SIZE = 1500
-CHUNK_OVERLAP = 200
+CHUNK_SIZE = 1000
+CHUNK_OVERLAP = 150
 
 OLLAMA_URL = "http://localhost:11434"
 
 EMBED_MODEL = "nomic-embed-text"
 LLM_MODEL = "qwen2.5-coder:3b"
 
-TOP_K = 8
+TOP_K = 5
+
+OLLAMA_OPTIONS: dict[str, int | float] = {
+    "num_ctx": 4096,
+    "num_predict": 1024,
+    "num_thread": 8,
+    "num_batch": 512,
+    "temperature": 0.2,
+}

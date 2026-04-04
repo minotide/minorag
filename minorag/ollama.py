@@ -9,13 +9,14 @@ from collections.abc import Iterator
 
 import requests
 
-from minorag.config import EMBED_MODEL, LLM_MODEL, OLLAMA_URL
+from minorag.config import EMBED_MODEL, LLM_MODEL, OLLAMA_OPTIONS, OLLAMA_URL
 
 _OFFLINE_MSG = "\nOllama não está respondendo. Inicie-o com:\n\n    ollama serve &\n"
 
 
 def embed(text: str) -> list[float]:
-    """Gera o embedding vetorial de um texto usando o modelo de embeddings.
+    """
+    Gera o embedding vetorial de um texto usando o modelo de embeddings.
 
     @param text: Texto a ser convertido em vetor.
     @return: Lista de floats representando o embedding.
@@ -24,7 +25,10 @@ def embed(text: str) -> list[float]:
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/embeddings",
-            json={"model": EMBED_MODEL, "prompt": text},
+            json={
+                "model": EMBED_MODEL,
+                "prompt": text
+            },
             timeout=120,
         )
         response.raise_for_status()
@@ -45,7 +49,12 @@ def generate(prompt: str) -> str:
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
-            json={"model": LLM_MODEL, "prompt": prompt, "stream": False},
+            json={
+                "model": LLM_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": OLLAMA_OPTIONS
+            },
             timeout=300,
         )
         response.raise_for_status()
@@ -65,7 +74,12 @@ def generate_stream(prompt: str) -> None:
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
-            json={"model": LLM_MODEL, "prompt": prompt, "stream": True},
+            json={
+                "model": LLM_MODEL,
+                "prompt": prompt,
+                "stream": True,
+                "options": OLLAMA_OPTIONS
+            },
             timeout=300,
             stream=True,
         )
@@ -93,7 +107,12 @@ def generate_stream_iter(prompt: str) -> Iterator[str]:
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
-            json={"model": LLM_MODEL, "prompt": prompt, "stream": True},
+            json={
+                "model": LLM_MODEL,
+                "prompt": prompt,
+                "stream": True,
+                "options": OLLAMA_OPTIONS
+            },
             timeout=300,
             stream=True,
         )

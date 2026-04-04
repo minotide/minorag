@@ -106,16 +106,35 @@ Quais pontos do código poderiam ser melhorados?
 
 Edite `minorag/config.py` para ajustar:
 
-| Parâmetro         | Padrão             | Descrição                        |
-| ----------------- | ------------------- | -------------------------------- |
-| `CODE_PATH`       | `./codebase`        | Pasta com o código fonte         |
-| `FILE_EXTENSIONS` | (ver config.py)     | Extensões de arquivo a indexar   |
-| `IGNORE_DIRS`     | (ver config.py)     | Pastas ignoradas na varredura    |
-| `CHUNK_SIZE`      | `1500`              | Tamanho de cada chunk (chars)    |
-| `CHUNK_OVERLAP`   | `200`               | Sobreposição entre chunks        |
-| `EMBED_MODEL`     | `nomic-embed-text`  | Modelo de embeddings (Ollama)    |
-| `LLM_MODEL`       | `qwen2.5-coder:3b` | Modelo de geração (Ollama)       |
-| `TOP_K`           | `8`                 | Quantidade de chunks retornados  |
+### Indexação
+
+| Parâmetro         | Padrão             | Descrição                                          |
+| ----------------- | ------------------ | -------------------------------------------------- |
+| `CODE_PATH`       | `./codebase`       | Pasta com o código fonte                           |
+| `FILE_EXTENSIONS` | (ver config.py)    | Extensões de arquivo a indexar                     |
+| `IGNORE_DIRS`     | (ver config.py)    | Pastas ignoradas na varredura                      |
+| `CHUNK_SIZE`      | `1000`             | Tamanho de cada chunk em caracteres                |
+| `CHUNK_OVERLAP`   | `150`              | Sobreposição entre chunks (melhora contexto)       |
+| `EMBED_MODEL`     | `nomic-embed-text` | Modelo de embeddings do Ollama                     |
+
+### Recuperação e geração
+
+| Parâmetro    | Padrão             | Descrição                                          |
+| ------------ | ------------------ | -------------------------------------------------- |
+| `LLM_MODEL`  | `qwen2.5-coder:3b` | Modelo LLM do Ollama                               |
+| `TOP_K`      | `5`                | Chunks mais relevantes enviados como contexto      |
+
+### Performance (`OLLAMA_OPTIONS`)
+
+| Opção          | Padrão | Descrição                                                                                 |
+| -------------- | ------ | ----------------------------------------------------------------------------------------- |
+| `num_ctx`      | `4096` | Tamanho da janela de contexto em tokens. Afeta diretamente o uso de RAM e o tempo de prefill. Valores menores = mais rápido e menos memória |
+| `num_predict`  | `1024` | Limite máximo de tokens gerados na resposta                                               |
+| `num_thread`   | `8`    | Threads de CPU usadas pelo Ollama. Ajuste para o número de threads do seu processador     |
+| `num_batch`    | `512`  | Tamanho do lote no prefill. Valores maiores aceleram o processamento do prompt            |
+| `temperature`  | `0.2`  | Criatividade da resposta (0 = determinístico, 1 = mais criativo). Baixo é ideal para código |
+
+> **Sobre uso de memória RAM:** o consumo é fixo pelo tamanho do modelo (~2 GB para o qwen2.5-coder:3b) mais o KV cache, proporcional ao `num_ctx`. Com `num_ctx=4096`, o total fica em ~2.5–3 GB. Não há parâmetro de "limite de RAM" na API do Ollama — o controle é feito ajustando `num_ctx` e escolhendo um modelo compatível com o hardware disponível.
 
 ---
 
