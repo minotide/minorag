@@ -9,7 +9,10 @@ FILE_EXTENSIONS = [
     ".md", ".txt",
 ]
 
-IGNORE_DIRS = ["target", ".git", "node_modules", "__pycache__", ".venv", "dist", "build"]
+IGNORE_DIRS = [
+    "target", ".git", "node_modules",
+    "__pycache__", ".venv", "dist", "build"
+]
 
 CHUNK_SIZE = 1500
 CHUNK_OVERLAP = 200

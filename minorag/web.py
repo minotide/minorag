@@ -1,3 +1,10 @@
+"""
+Módulo da interface web do minorag.
+
+Expõe uma aplicação Flask com rotas para indexação de código
+e consulta ao índice via Server-Sent Events (SSE) com streaming de tokens.
+"""
+
 import json as _json
 import os
 
@@ -21,6 +28,13 @@ def index():
 
 @app.route("/api/index", methods=["POST"])
 def api_index():
+    """
+    Indexa os arquivos de código da pasta codebase/ no ChromaDB.
+
+    Reindexa do zero, removendo a coleção anterior para evitar duplicatas.
+
+    @return: JSON com mensagem de sucesso e total de chunks, ou erro 400.
+    """
     docs = read_files(CODE_PATH)
 
     if not docs:
@@ -58,6 +72,12 @@ def api_index():
 
 @app.route("/api/query", methods=["POST"])
 def api_query():
+    """
+    Responde uma pergunta sobre o código sem streaming.
+
+    @body question: Pergunta enviada no corpo JSON.
+    @return: JSON com a resposta completa, ou erro 400.
+    """
     data = request.get_json()
     question = data.get("question", "").strip()
 
@@ -84,6 +104,15 @@ def api_query():
 
 @app.route("/api/query/stream", methods=["POST"])
 def api_query_stream():
+    """
+    Responde uma pergunta sobre o código com streaming via SSE.
+
+    Emite eventos do tipo 'log' durante o processamento, 'token' para
+    cada fragmento da resposta gerada e 'done' ao finalizar.
+
+    @body question: Pergunta enviada no corpo JSON.
+    @return: Response SSE com Content-Type text/event-stream.
+    """
     data = request.get_json()
     question = data.get("question", "").strip()
 

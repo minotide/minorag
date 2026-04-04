@@ -1,3 +1,9 @@
+"""Módulo de comunicação com o servidor Ollama.
+
+Responsável por gerar embeddings e respostas de texto usando
+os modelos configurados via API REST do Ollama.
+"""
+
 import json
 
 import requests
@@ -8,6 +14,12 @@ _OFFLINE_MSG = "\nOllama não está respondendo. Inicie-o com:\n\n    ollama ser
 
 
 def embed(text):
+    """Gera o embedding vetorial de um texto usando o modelo de embeddings.
+
+    @param text: Texto a ser convertido em vetor.
+    @return: Lista de floats representando o embedding.
+    @raises SystemExit: Se o Ollama não estiver acessível.
+    """
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/embeddings",
@@ -22,6 +34,13 @@ def embed(text):
 
 
 def generate(prompt):
+    """
+    Gera uma resposta completa para o prompt fornecido (sem streaming).
+
+    @param prompt: Texto de entrada enviado ao modelo LLM.
+    @return: String com a resposta completa gerada pelo modelo.
+    @raises SystemExit: Se o Ollama não estiver acessível.
+    """
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
@@ -36,6 +55,12 @@ def generate(prompt):
 
 
 def generate_stream(prompt):
+    """
+    Gera uma resposta em streaming e imprime os tokens diretamente no stdout.
+
+    @param prompt: Texto de entrada enviado ao modelo LLM.
+    @raises SystemExit: Se o Ollama não estiver acessível.
+    """
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
@@ -58,6 +83,12 @@ def generate_stream(prompt):
 
 
 def generate_stream_iter(prompt):
+    """
+    Gera uma resposta em streaming e retorna os tokens como um gerador.
+
+    @param prompt: Texto de entrada enviado ao modelo LLM.
+    @return: Gerador de strings, cada uma contendo um token da resposta.
+    """
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",

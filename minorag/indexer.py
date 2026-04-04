@@ -1,3 +1,9 @@
+"""
+Módulo de indexação de código-fonte no ChromaDB.
+Responsável por ler arquivos do diretório de código, dividí-los
+em chunks e armazenar seus embeddings no banco vetorial.
+"""
+
 import os
 
 import chromadb
@@ -14,6 +20,15 @@ from minorag.ollama import embed
 
 
 def read_files(path):
+    """
+    Lê recursivamente os arquivos de código do diretório informado.
+
+    Ignora diretórios definidos em IGNORE_DIRS e filtra apenas
+    extensões definidas em FILE_EXTENSIONS.
+
+    @param path: Caminho raiz para iniciar a leitura.
+    @return: Lista de tuplas (caminho_absoluto, conteúdo) dos arquivos lidos.
+    """
     docs = []
     for root, dirs, files in os.walk(path):
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
@@ -31,6 +46,12 @@ def read_files(path):
 
 
 def chunk_text(text):
+    """
+    Divide um texto em chunks de tamanho fixo com sobreposição.
+
+    @param text: Texto completo a ser dividido.
+    @return: Lista de strings, cada uma com no máximo CHUNK_SIZE caracteres.
+    """
     chunks = []
     start = 0
     while start < len(text):
@@ -42,6 +63,12 @@ def chunk_text(text):
 
 
 def index_code():
+    """
+    Indexa todos os arquivos de código da pasta codebase/ no ChromaDB.
+
+    Lê os arquivos, divide em chunks, gera embeddings via Ollama
+    e armazena os vetores na coleção 'codebase' do ChromaDB.
+    """
     print("Lendo arquivos...")
     docs = read_files(CODE_PATH)
 
