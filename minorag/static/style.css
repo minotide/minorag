@@ -61,6 +61,26 @@ header h1 span {
     background: #30363d;
 }
 
+.btn-danger {
+    background: #3d1010;
+    color: #f85149;
+    border: 1px solid #6b1b1b;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.btn-danger:hover {
+    background: #5c1a1a;
+}
+
+.btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ---- Config Panels (Git, LLM, Indexação) ---- */
 
 .config-panel {

@@ -271,6 +271,56 @@ async function saveIndexingConfig() {
     btn.textContent = "Salvar no .env";
 }
 
+// ---- Reset .env ----
+
+async function resetEnv() {
+    const confirmed = confirm(
+        "Isso irá apagar todas as configurações do .env e restaurar os valores padrão.\n\n" +
+        "Tem certeza?"
+    );
+    if (!confirmed) return;
+
+    try {
+        const res = await fetch("/api/env/reset", { method: "POST" });
+        const data = await res.json();
+        if (res.ok) {
+            alert("✓ " + data.message);
+        } else {
+            alert("✗ " + (data.error || "Erro ao restaurar .env"));
+        }
+    } catch (err) {
+        alert("✗ Erro: " + err.message);
+    }
+}
+
+// ---- Limpar Codebase ----
+
+async function clearCodebase() {
+    const confirmed = confirm(
+        "Isso irá remover todos os arquivos clonados (.codebase/) e o índice do ChromaDB.\n\n" +
+        "O repositório precisará ser sincronizado novamente.\n\nTem certeza?"
+    );
+    if (!confirmed) return;
+
+    const btn = document.querySelector("#git-panel .btn-danger");
+    const statusEl = document.getElementById("git-status");
+    if (btn) { btn.disabled = true; btn.textContent = "Limpando..."; }
+    statusEl.textContent = "";
+    statusEl.className = "config-status-msg";
+
+    try {
+        const res = await fetch("/api/codebase/clear", { method: "POST" });
+        const data = await res.json();
+        statusEl.textContent = res.ok ? "✓ " + data.message : "✗ " + (data.error || "Erro ao limpar");
+        statusEl.className = "config-status-msg " + (res.ok ? "success" : "error");
+    } catch (err) {
+        statusEl.textContent = "✗ Erro: " + err.message;
+        statusEl.className = "config-status-msg error";
+    }
+
+    if (btn) { btn.disabled = false; btn.textContent = "Limpar Codebase"; }
+}
+
 // ---- Chat ----
 
 async function sendQuestion() {

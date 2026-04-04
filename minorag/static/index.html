@@ -15,6 +15,9 @@
             <button id="btn-indexing" onclick="togglePanel('indexing')">⚙ Indexação</button>
             <button id="btn-llm" onclick="togglePanel('llm')">⚙ LLM</button>
             <button id="btn-git" onclick="togglePanel('git')">⚙ Repositório</button>
+            <button class="btn-danger" onclick="resetEnv()" title="Apaga o .env e restaura todos os valores padrão">
+                Restaurar .env
+            </button>
         </div>
     </header>
 
@@ -156,6 +159,8 @@
                     title="Salva as configurações no arquivo .env do projeto.">Salvar no .env</button>
                 <button id="btn-sync" onclick="gitSync()"
                     title="Clona repositório e gera os índices de busca.">Sincronizar Codebase</button>
+                <button class="btn-danger" onclick="clearCodebase()"
+                    title="Remove todos os arquivos clonados e o índice do ChromaDB.">Limpar Codebase</button>
             </div>
             <div class="config-note">
                 Configurações, codebase e índices são salvos <strong>apenas localmente</strong> no arquivo

@@ -438,6 +438,98 @@ def api_indexing_config_save():
     return jsonify({"message": "Configuração de indexação salva com sucesso!"})
 
 
+# ---------------------------------------------------------------------------
+# Rota: Restaurar .env com valores padrão
+# ---------------------------------------------------------------------------
+
+@app.route("/api/env/reset", methods=["POST"])
+def api_env_reset():
+    """Sobrescreve o .env com todos os valores padrão e atualiza a memória."""
+    import shutil
+
+    _PROMPT_DEFAULT_ENCODED = _cfg._PROMPT_DEFAULT.replace("\n", "\\n")
+
+    defaults = {
+        "GIT_REPO_URL": "",
+        "GIT_BRANCH": "main",
+        "GIT_AUTO_UPDATE": "false",
+        "GIT_ACCESS_TOKEN": "",
+        "GIT_SSH_KEY_PATH": "",
+        "OLLAMA_URL": "http://localhost:11434",
+        "EMBED_MODEL": "nomic-embed-text",
+        "LLM_MODEL": "qwen2.5-coder:3b",
+        "TOP_K": "8",
+        "OLLAMA_NUM_CTX": "8192",
+        "OLLAMA_NUM_PREDICT": "1024",
+        "OLLAMA_NUM_THREAD": "8",
+        "OLLAMA_NUM_BATCH": "512",
+        "OLLAMA_TEMPERATURE": "0.2",
+        "OLLAMA_REPEAT_PENALTY": "1.3",
+        "PROMPT_TEMPLATE": _PROMPT_DEFAULT_ENCODED,
+        "FILE_EXTENSIONS": ",".join([
+            ".java", ".py", ".js", ".ts", ".go", ".rs",
+            ".c", ".cpp", ".h", ".cs", ".rb", ".php",
+            ".kt", ".scala", ".swift", ".m", ".sql", ".sh",
+        ]),
+        "INCLUDE_FILENAMES": "architecture.md",
+        "IGNORE_DIRS": "target,.git,node_modules,__pycache__,.venv,dist,build",
+        "CHUNK_SIZE": "1500",
+        "CHUNK_OVERLAP": "200",
+    }
+
+    with open(ENV_PATH, "w", encoding="utf-8") as f:
+        for key, value in defaults.items():
+            f.write(f"{key}={value}\n")
+
+    # Atualiza memória
+    _cfg.GIT_REPO_URL = defaults["GIT_REPO_URL"]
+    _cfg.GIT_BRANCH = defaults["GIT_BRANCH"]
+    _cfg.GIT_AUTO_UPDATE = False
+    _cfg.GIT_ACCESS_TOKEN = defaults["GIT_ACCESS_TOKEN"]
+    _cfg.GIT_SSH_KEY_PATH = defaults["GIT_SSH_KEY_PATH"]
+    _cfg.OLLAMA_URL = defaults["OLLAMA_URL"]
+    _cfg.EMBED_MODEL = defaults["EMBED_MODEL"]
+    _cfg.LLM_MODEL = defaults["LLM_MODEL"]
+    _cfg.TOP_K = 8
+    _cfg.OLLAMA_OPTIONS["num_ctx"] = 8192
+    _cfg.OLLAMA_OPTIONS["num_predict"] = 1024
+    _cfg.OLLAMA_OPTIONS["num_thread"] = 8
+    _cfg.OLLAMA_OPTIONS["num_batch"] = 512
+    _cfg.OLLAMA_OPTIONS["temperature"] = 0.2
+    _cfg.OLLAMA_OPTIONS["repeat_penalty"] = 1.3
+    _cfg.PROMPT_TEMPLATE = _cfg._PROMPT_DEFAULT
+    _cfg.FILE_EXTENSIONS = [x.strip()
+                            for x in defaults["FILE_EXTENSIONS"].split(",")]
+    _cfg.INCLUDE_FILENAMES = ["architecture.md"]
+    _cfg.IGNORE_DIRS = [x.strip() for x in defaults["IGNORE_DIRS"].split(",")]
+    _cfg.CHUNK_SIZE = 1500
+    _cfg.CHUNK_OVERLAP = 200
+
+    return jsonify({"message": ".env restaurado para os valores padrão."})
+
+
+# ---------------------------------------------------------------------------
+# Rota: Limpar codebase e índice ChromaDB
+# ---------------------------------------------------------------------------
+
+@app.route("/api/codebase/clear", methods=["POST"])
+def api_codebase_clear():
+    """Remove .codebase/ e apaga o diretório .chromadb/ completamente."""
+    import shutil
+
+    # Limpa diretório .chromadb/ (dados físicos do ChromaDB)
+    if os.path.exists(CHROMA_PATH):
+        shutil.rmtree(CHROMA_PATH)
+
+    # Limpa diretório .codebase/
+    if os.path.exists(CODE_PATH):
+        shutil.rmtree(CODE_PATH)
+    os.makedirs(CODE_PATH, exist_ok=True)
+    open(os.path.join(CODE_PATH, ".gitkeep"), "w").close()
+
+    return jsonify({"message": "Codebase e índice removidos com sucesso."})
+
+
 def _sse(event_type: str, text: str) -> str:
     return f"data: {_json.dumps({'type': event_type, 'text': text})}\n\n"
 
