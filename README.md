@@ -16,7 +16,7 @@ Este projeto segue a filosofia Minotide:
 | **Docker**             | Docker Desktop (Win/Mac) ou Docker Engine (Linux) |
 | **Dev Containers**     | Extensão `ms-vscode-remote.remote-containers`     |
 
-> **Windows:** Docker Desktop com backend WSL2. Clone o projeto dentro do Linux (`~/ws/rag`). Evite caminhos como `/mnt/c/Users/...`.
+> **Windows:** Docker Desktop com WSL2. Clone o projeto dentro do Linux (`~/ws/rag`). Evite caminhos como `/mnt/c/Users/...`.
 >
 > **Linux:** garanta que o Docker pode ser executado sem `sudo`:
 > ```bash
@@ -91,8 +91,8 @@ Edite `minorag/config.py` para ajustar:
 | `CODE_PATH`       | `./codebase`       | Pasta com o código fonte                           |
 | `FILE_EXTENSIONS` | (ver config.py)    | Extensões de arquivo a indexar                     |
 | `IGNORE_DIRS`     | (ver config.py)    | Pastas ignoradas na varredura                      |
-| `CHUNK_SIZE`      | `1000`             | Tamanho de cada chunk em caracteres                |
-| `CHUNK_OVERLAP`   | `150`              | Sobreposição entre chunks (melhora contexto)       |
+| `CHUNK_SIZE`      | (ver config.py)    | Tamanho de cada chunk em caracteres                |
+| `CHUNK_OVERLAP`   | (ver config.py)    | Sobreposição entre chunks (melhora contexto)       |
 | `EMBED_MODEL`     | `nomic-embed-text` | Modelo de embeddings do Ollama                     |
 
 ### Recuperação e geração
@@ -100,19 +100,17 @@ Edite `minorag/config.py` para ajustar:
 | Parâmetro    | Padrão             | Descrição                                          |
 | ------------ | ------------------ | -------------------------------------------------- |
 | `LLM_MODEL`  | `qwen2.5-coder:3b` | Modelo LLM do Ollama                               |
-| `TOP_K`      | `5`                | Chunks mais relevantes enviados como contexto      |
+| `TOP_K`      | (ver config.py)    | Chunks mais relevantes enviados como contexto      |
 
 ### Performance (`OLLAMA_OPTIONS`)
 
-| Opção          | Padrão | Descrição                                                                                 |
-| -------------- | ------ | ----------------------------------------------------------------------------------------- |
-| `num_ctx`      | `4096` | Tamanho da janela de contexto em tokens. Afeta diretamente o uso de RAM e o tempo de prefill. Valores menores = mais rápido e menos memória |
-| `num_predict`  | `1024` | Limite máximo de tokens gerados na resposta                                               |
-| `num_thread`   | `8`    | Threads de CPU usadas pelo Ollama. Ajuste para o número de threads do seu processador     |
-| `num_batch`    | `512`  | Tamanho do lote no prefill. Valores maiores aceleram o processamento do prompt            |
-| `temperature`  | `0.2`  | Criatividade da resposta (0 = determinístico, 1 = mais criativo). Baixo é ideal para código |
-
-> **Sobre uso de memória RAM:** o consumo é fixo pelo tamanho do modelo (~2 GB para o qwen2.5-coder:3b) mais o KV cache, proporcional ao `num_ctx`. Com `num_ctx=4096`, o total fica em ~2.5–3 GB. Não há parâmetro de "limite de RAM" na API do Ollama — o controle é feito ajustando `num_ctx` e escolhendo um modelo compatível com o hardware disponível.
+| Opção          | Descrição                                                                                 |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| `num_ctx`      | Tamanho da janela de contexto em tokens. Afeta diretamente o uso de RAM e o tempo de prefill. Valores menores = mais rápido e menos memória |
+| `num_predict`  | Limite máximo de tokens gerados na resposta                                               |
+| `num_thread`   | Threads de CPU usadas pelo Ollama. Ajuste para o número de threads do seu processador     |
+| `num_batch`    | Tamanho do lote no prefill. Valores maiores aceleram o processamento do prompt            |
+| `temperature`  | Criatividade da resposta (0 = determinístico, 1 = mais criativo). Baixo é ideal para código |
 
 ---
 
@@ -127,32 +125,11 @@ Edite `minorag/config.py` para ajustar:
 
 ---
 
-## 📂 Estrutura
-
-```text
-minorag/
-  .devcontainer/
-    devcontainer.json     ← configura o ambiente automaticamente
-    setup.sh              ← instala dependências e modelos
-  minorag/                ← pacote Python
-    __init__.py
-    config.py             ← configurações do RAG
-    core.py               ← lógica de indexação, embeddings e query
-    web.py                ← servidor web (Flask)
-    static/
-      index.html          ← interface web
-  codebase/               ← clone seu projeto aqui
-  main.py                 ← entry point
-  requirements.txt        ← dependências Python
-```
-
----
-
 ## ⚡ Melhorias possíveis
 
 ### 🔢 Aumentar `TOP_K` para mais contexto nas respostas
 
-`TOP_K` define quantos chunks do índice são recuperados e enviados como contexto para o LLM a cada pergunta. O valor padrão é `8`.
+`TOP_K` define quantos chunks do índice são recuperados e enviados como contexto para o LLM a cada pergunta.
 
 Aumentar esse número pode melhorar a qualidade das respostas em projetos grandes, onde a informação relevante está espalhada em vários arquivos. Por outro lado, cada chunk extra aumenta o número de tokens no prompt, o que impacta diretamente o tempo de resposta (prefill) e o uso de memória.
 
@@ -162,7 +139,7 @@ Aumentar esse número pode melhorar a qualidade das respostas em projetos grande
 | ------- | ------------------------ | ----------- |
 | `3`     | ~3.000 chars             | Projetos pequenos, respostas rápidas |
 | `5`     | ~5.000 chars             | Equilíbrio entre qualidade e velocidade |
-| `8`     | ~8.000 chars *(padrão)*  | Projetos grandes, perguntas amplas |
+| `8`     | ~8.000 chars             | Projetos grandes, perguntas amplas |
 | `12`    | ~12.000 chars            | Máxima cobertura — exige `num_ctx` alto |
 
 > Se aumentar `TOP_K` para `8` ou mais, aumente `num_ctx` proporcionalmente em `OLLAMA_OPTIONS` para garantir que o modelo consiga processar todo o contexto sem truncar.
