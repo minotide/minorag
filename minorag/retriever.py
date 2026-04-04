@@ -7,7 +7,8 @@ construir o prompt e acionar o modelo LLM para responder perguntas.
 
 import chromadb
 
-from minorag.config import CHROMA_PATH, PROMPT_TEMPLATE, TOP_K
+from minorag import config as _cfg
+from minorag.config import CHROMA_PATH, TOP_K
 from minorag.ollama import embed, generate_stream
 
 
@@ -22,7 +23,7 @@ def build_prompt(question: str, chunks: str) -> str:
     @param chunks: Trechos de código recuperados do índice, concatenados como contexto.
     @return: String com o prompt formatado para o modelo.
     """
-    return PROMPT_TEMPLATE.format(question=question, chunks=chunks)
+    return _cfg.PROMPT_TEMPLATE.format(question=question, chunks=chunks)
 
 
 def query_loop():

@@ -41,7 +41,7 @@ O servidor Ollama inicia automaticamente com o container.
 
 ## 🔧 Como usar
 
-> Suporta: `.java` `.py` `.js` `.ts` `.go` `.rs` `.c` `.cpp` `.cs` `.rb` `.php` `.kt` `.scala` `.swift` `.sql` `.sh` `.yaml` `.json` `.xml` `.md` e mais. <br> Configure em `config.py`.
+> Suporta: `.java` `.py` `.js` `.ts` `.go` `.rs` `.c` `.cpp` `.cs` `.rb` `.php` `.kt` `.scala` `.swift` `.sql` `.sh` e mais. Configure pelo painel **⚙ Indexação**.
 
 Após abrir o projeto no container, acesse **http://localhost:5000**, a interface web abre automaticamente no navegador.
 
@@ -69,39 +69,47 @@ Digite sua pergunta no campo de texto e pressione **Enter** ou clique em **Envia
 
 ---
 
-## ⚙️ Configuração
+## ⚙️ Configuração via interface web
 
-As configurações do repositório Git são feitas pela interface web (painel **⚙ Repositório**) e salvas automaticamente no arquivo `.env` do projeto.
+Todos os parâmetros do projeto são configuráveis diretamente pela interface, sem precisar editar arquivos. Cada painel salva as configurações no `.env` e aplica as mudanças imediatamente na sessão atual.
 
-Para ajustes avançados de modelos e performance, edite `minorag/config.py`:
+### Painel ⚙ LLM
 
-### Indexação
+Configurações do Ollama e do modelo de linguagem:
 
-| Parâmetro         | Padrão             | Descrição                                          |
-| ----------------- | ------------------ | -------------------------------------------------- |
-| `CODE_PATH`       | `./.codebase`      | Pasta com o código fonte                           |
-| `FILE_EXTENSIONS` | (ver config.py)    | Extensões de arquivo a indexar                     |
-| `IGNORE_DIRS`     | (ver config.py)    | Pastas ignoradas na varredura                      |
-| `CHUNK_SIZE`      | (ver config.py)    | Tamanho de cada chunk em caracteres                |
-| `CHUNK_OVERLAP`   | (ver config.py)    | Sobreposição entre chunks (melhora contexto)       |
-| `EMBED_MODEL`     | `nomic-embed-text` | Modelo de embeddings do Ollama                     |
+| Campo | Variável `.env` | Padrão | Descrição |
+|---|---|---|---|
+| URL do Ollama | `OLLAMA_URL` | `http://localhost:11434` | Endereço da API do Ollama |
+| Modelo de Embedding | `EMBED_MODEL` | `nomic-embed-text` | Modelo para geração de vetores |
+| Modelo LLM | `LLM_MODEL` | `qwen2.5-coder:3b` | Modelo para geração de respostas |
+| Top K | `TOP_K` | `8` | Chunks mais relevantes enviados como contexto |
+| Contexto (num_ctx) | `OLLAMA_NUM_CTX` | `8192` | Janela de contexto em tokens |
+| Tokens gerados | `OLLAMA_NUM_PREDICT` | `1024` | Limite máximo de tokens na resposta |
+| Threads (num_thread) | `OLLAMA_NUM_THREAD` | `8` | Threads de CPU usadas pelo Ollama |
+| Batch (num_batch) | `OLLAMA_NUM_BATCH` | `512` | Tamanho do lote no prefill |
+| Temperature | `OLLAMA_TEMPERATURE` | `0.2` | Criatividade da resposta (0 = determinístico) |
+| Repeat Penalty | `OLLAMA_REPEAT_PENALTY` | `1.3` | Penalidade para evitar repetições |
+| Prompt Template | `PROMPT_TEMPLATE` | *(ver abaixo)* | Instruções enviadas ao LLM a cada pergunta |
 
-### Recuperação e geração
+> Para alternar modelos (ex: `llama3.2`, `qwen2.5-coder:7b`), basta atualizar **Modelo LLM** pelo painel e re-indexar se quiser usar um modelo de embedding diferente.
 
-| Parâmetro    | Padrão             | Descrição                                          |
-| ------------ | ------------------ | -------------------------------------------------- |
-| `LLM_MODEL`  | `qwen2.5-coder:3b` | Modelo LLM do Ollama                               |
-| `TOP_K`      | (ver config.py)    | Chunks mais relevantes enviados como contexto      |
+### Painel ⚙ Indexação
 
-### Performance (`OLLAMA_OPTIONS`)
+Controla quais arquivos serão processados e como são divididos:
 
-| Opção          | Descrição                                                                                 |
-| -------------- | ----------------------------------------------------------------------------------------- |
-| `num_ctx`      | Tamanho da janela de contexto em tokens. Afeta diretamente o uso de RAM e o tempo de prefill. Valores menores = mais rápido e menos memória |
-| `num_predict`  | Limite máximo de tokens gerados na resposta                                               |
-| `num_thread`   | Threads de CPU usadas pelo Ollama. Ajuste para o número de threads do seu processador     |
-| `num_batch`    | Tamanho do lote no prefill. Valores maiores aceleram o processamento do prompt            |
-| `temperature`  | Criatividade da resposta (0 = determinístico, 1 = mais criativo). Baixo é ideal para código |
+| Campo | Variável `.env` | Padrão | Descrição |
+|---|---|---|---|
+| Extensões de arquivo | `FILE_EXTENSIONS` | `.java,.py,.js,...` | Lista separada por vírgula |
+| Nomes incluídos | `INCLUDE_FILENAMES` | `architecture.md` | Arquivos incluídos pelo nome exato |
+| Diretórios ignorados | `IGNORE_DIRS` | `target,.git,...` | Pastas excluídas da varredura |
+| Tamanho do chunk | `CHUNK_SIZE` | `1500` | Caracteres por chunk |
+| Sobreposição | `CHUNK_OVERLAP` | `200` | Sobreposição entre chunks consecutivos |
+
+> Alterações de indexação têm efeito na **próxima** vez que você clicar em Sincronizar Codebase.
+
+### Porta do servidor
+
+A variável `WEB_PORT` (padrão `5000`) requer reinício do servidor para ter efeito — edite diretamente o `.env` e reinicie.
 
 ---
 
@@ -120,7 +128,7 @@ Para ajustes avançados de modelos e performance, edite `minorag/config.py`:
 
 ### 🔢 Aumentar `TOP_K` para mais contexto nas respostas
 
-`TOP_K` define quantos chunks do índice são recuperados e enviados como contexto para o LLM a cada pergunta.
+`TOP_K` define quantos chunks do índice são recuperados e enviados como contexto para o LLM a cada pergunta. Configure pelo painel **⚙ LLM** ou pela variável `TOP_K` no `.env`.
 
 Aumentar esse número pode melhorar a qualidade das respostas em projetos grandes, onde a informação relevante está espalhada em vários arquivos. Por outro lado, cada chunk extra aumenta o número de tokens no prompt, o que impacta diretamente o tempo de resposta (prefill) e o uso de memória.
 
@@ -133,15 +141,29 @@ Aumentar esse número pode melhorar a qualidade das respostas em projetos grande
 | `8`     | ~8.000 chars             | Projetos grandes, perguntas amplas |
 | `12`    | ~12.000 chars            | Máxima cobertura — exige `num_ctx` alto |
 
-> Se aumentar `TOP_K` para `8` ou mais, aumente `num_ctx` proporcionalmente em `OLLAMA_OPTIONS` para garantir que o modelo consiga processar todo o contexto sem truncar.
+> Se aumentar `TOP_K` para `8` ou mais, aumente `num_ctx` proporcionalmente pelo painel **⚙ LLM** para garantir que o modelo consiga processar todo o contexto sem truncar.
 
 ---
 
 ### ✏️ Personalizar o prompt de resposta
 
-O template do prompt fica em `minorag/config.py` na variável `PROMPT_TEMPLATE` e é usado por `build_prompt` em `minorag/retriever.py`. Para customizar, basta editar o `config.py`.
+O template do prompt é configurável diretamente pelo painel **⚙ LLM**, no campo **Prompt Template**. A alteração tem efeito imediato e é persistida no `.env`.
 
 > Os marcadores `{chunks}` e `{question}` são obrigatórios — são substituídos automaticamente pelo retriever antes de enviar ao modelo.
+
+O padrão é:
+
+```
+You are a code assistant. Answer the question using ONLY the code snippets provided below.
+If the answer is not present in the snippets, say: "I don't have enough context to answer this accurately."
+Do not use any knowledge beyond what is shown.
+
+Code snippets: {chunks}
+
+Question: {question}
+
+Answer:
+```
 
 ---
 
@@ -181,7 +203,7 @@ Para rodar modelos maiores com aceleração por GPU NVIDIA:
 
 1. Instale o [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 2. Adicione `"--gpus", "all"` ao `runArgs` em `.devcontainer/devcontainer.json`
-3. Rebuild o container e troque `LLM_MODEL` em `config.py` para um modelo maior (ex: `llama3`, `qwen2.5-coder:7b`)
+3. Rebuild o container e troque o **Modelo LLM** pelo painel **⚙ LLM** para um modelo maior (ex: `llama3.2`, `qwen2.5-coder:7b`)
 
 ---
 

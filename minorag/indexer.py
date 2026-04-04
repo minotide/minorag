@@ -9,13 +9,8 @@ import os
 import chromadb
 
 from minorag.chunkers import chunk_by_language
-from minorag.config import (
-    CHROMA_PATH,
-    CODE_PATH,
-    FILE_EXTENSIONS,
-    IGNORE_DIRS,
-    INCLUDE_FILENAMES,
-)
+from minorag import config as _cfg
+from minorag.config import CHROMA_PATH, CODE_PATH
 from minorag.ollama import embed
 
 
@@ -31,10 +26,10 @@ def read_files(path: str) -> list[tuple[str, str]]:
     """
     docs: list[tuple[str, str]] = []
     for root, dirs, files in os.walk(path):
-        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
+        dirs[:] = [d for d in dirs if d not in _cfg.IGNORE_DIRS]
 
         for file in files:
-            if any(file.endswith(ext) for ext in FILE_EXTENSIONS) or file in INCLUDE_FILENAMES:
+            if any(file.endswith(ext) for ext in _cfg.FILE_EXTENSIONS) or file in _cfg.INCLUDE_FILENAMES:
                 full_path = os.path.join(root, file)
                 try:
                     with open(full_path, "r", encoding="utf-8") as f:

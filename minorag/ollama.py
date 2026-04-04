@@ -11,7 +11,7 @@ from collections.abc import Iterator
 
 import requests
 
-from minorag.config import EMBED_MODEL, LLM_MODEL, OLLAMA_OPTIONS, OLLAMA_URL
+from minorag import config as _cfg
 
 
 def _try_start_ollama() -> bool:
@@ -32,7 +32,7 @@ def _try_start_ollama() -> bool:
         time.sleep(2)
         print(".", end="", flush=True)
         try:
-            requests.get(OLLAMA_URL, timeout=3)
+            requests.get(_cfg.OLLAMA_URL, timeout=3)
             print(" pronto!")
             return True
         except requests.exceptions.ConnectionError:
@@ -46,7 +46,7 @@ def _try_start_ollama() -> bool:
 def ensure_ollama_running() -> bool:
     """Verifica se Ollama está rodando e tenta iniciar automaticamente se necessário."""
     try:
-        requests.get(OLLAMA_URL, timeout=5)
+        requests.get(_cfg.OLLAMA_URL, timeout=5)
         return True
     except requests.exceptions.ConnectionError:
         return _try_start_ollama()
@@ -62,8 +62,8 @@ def embed(text: str) -> list[float]:
     """
     def _do_request():
         response = requests.post(
-            f"{OLLAMA_URL}/api/embeddings",
-            json={"model": EMBED_MODEL, "prompt": text},
+            f"{_cfg.OLLAMA_URL}/api/embeddings",
+            json={"model": _cfg.EMBED_MODEL, "prompt": text},
             timeout=120,
         )
         response.raise_for_status()
@@ -87,12 +87,12 @@ def generate(prompt: str) -> str:
     """
     def _do_request():
         response = requests.post(
-            f"{OLLAMA_URL}/api/generate",
+            f"{_cfg.OLLAMA_URL}/api/generate",
             json={
-                "model": LLM_MODEL,
+                "model": _cfg.LLM_MODEL,
                 "prompt": prompt,
                 "stream": False,
-                "options": OLLAMA_OPTIONS,
+                "options": _cfg.OLLAMA_OPTIONS,
             },
             timeout=300,
         )
@@ -116,12 +116,12 @@ def generate_stream(prompt: str) -> None:
     """
     def _do_stream():
         response = requests.post(
-            f"{OLLAMA_URL}/api/generate",
+            f"{_cfg.OLLAMA_URL}/api/generate",
             json={
-                "model": LLM_MODEL,
+                "model": _cfg.LLM_MODEL,
                 "prompt": prompt,
                 "stream": True,
-                "options": OLLAMA_OPTIONS,
+                "options": _cfg.OLLAMA_OPTIONS,
             },
             timeout=300,
             stream=True,
@@ -156,12 +156,12 @@ def generate_stream_iter(prompt: str) -> Iterator[str]:
         raise SystemExit(1)
 
     response = requests.post(
-        f"{OLLAMA_URL}/api/generate",
+        f"{_cfg.OLLAMA_URL}/api/generate",
         json={
-            "model": LLM_MODEL,
+            "model": _cfg.LLM_MODEL,
             "prompt": prompt,
             "stream": True,
-            "options": OLLAMA_OPTIONS,
+            "options": _cfg.OLLAMA_OPTIONS,
         },
         timeout=300,
         stream=True,

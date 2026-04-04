@@ -13,7 +13,7 @@ Camada 4 — fallback por tamanho fixo:     qualquer outra extensão
 import ast
 import re
 
-from minorag.config import CHUNK_OVERLAP, CHUNK_SIZE
+from minorag import config as _cfg
 
 _JAVA_SIG = re.compile(
     r"^\s*(?:(?:public|private|protected|static|final|abstract|"
@@ -105,8 +105,8 @@ def chunk_text(text: str) -> list[str]:
     chunks: list[str] = []
     start = 0
     while start < len(text):
-        chunks.append(text[start: start + CHUNK_SIZE])
-        start += CHUNK_SIZE - CHUNK_OVERLAP
+        chunks.append(text[start: start + _cfg.CHUNK_SIZE])
+        start += _cfg.CHUNK_SIZE - _cfg.CHUNK_OVERLAP
     return chunks
 
 
@@ -190,7 +190,7 @@ def _chunk_python(source: str) -> list[str]:
             chunks.append(_src(node))
         elif isinstance(node, ast.ClassDef):
             full = _src(node)
-            if len(full) <= CHUNK_SIZE * 2:
+            if len(full) <= _cfg.CHUNK_SIZE * 2:
                 chunks.append(full)
             else:
                 first_child = node.body[0].lineno - 1

@@ -11,7 +11,8 @@ import os
 import chromadb
 from flask import Flask, Response, jsonify, request, send_from_directory, stream_with_context
 
-from minorag.config import CHROMA_PATH, CODE_PATH, ENV_PATH, GIT_ACCESS_TOKEN, GIT_BRANCH, GIT_REPO_URL, TOP_K
+from minorag.config import CHROMA_PATH, CODE_PATH, ENV_PATH
+from minorag import config as _cfg
 from minorag.chunkers import chunk_by_language
 from minorag.indexer import read_files
 from minorag.ollama import embed, generate, generate_stream_iter
@@ -40,13 +41,13 @@ def api_index():
     docs = read_files(CODE_PATH)
 
     if not docs:
-        repo_url = GIT_REPO_URL.strip()
+        repo_url = _cfg.GIT_REPO_URL.strip()
         if not repo_url:
             return jsonify({"error": "Nenhum arquivo encontrado em .codebase/. Configure e clone um repositório pelo painel Git."}), 400
 
         from minorag.git import clone_repo
-        ok = clone_repo(repo_url, GIT_BRANCH or "main",
-                        GIT_ACCESS_TOKEN or None)
+        ok = clone_repo(repo_url, _cfg.GIT_BRANCH or "main",
+                        _cfg.GIT_ACCESS_TOKEN or None)
         if not ok:
             return jsonify({"error": "Nenhum arquivo em .codebase/ e falha ao clonar o repositório configurado."}), 400
 
@@ -108,7 +109,7 @@ def api_query():
 
     q_emb = embed(question)
 
-    results = collection.query(query_embeddings=[q_emb], n_results=TOP_K)
+    results = collection.query(query_embeddings=[q_emb], n_results=_cfg.TOP_K)
 
     chunks = "\n\n---\n\n".join((results["documents"] or [[]])[0])
 
@@ -146,7 +147,8 @@ def api_query_stream():
         q_emb = embed(question)
 
         yield f"data: {_json.dumps({'type': 'log', 'text': 'Buscando contexto no índice...'})}\n\n"
-        results = collection.query(query_embeddings=[q_emb], n_results=TOP_K)
+        results = collection.query(
+            query_embeddings=[q_emb], n_results=_cfg.TOP_K)
 
         yield f"data: {_json.dumps({'type': 'log', 'text': 'Gerando resposta...'})}\n\n"
         chunks = "\n\n---\n\n".join((results["documents"] or [[]])[0])
@@ -165,6 +167,18 @@ def api_query_stream():
 
 _GIT_ENV_KEYS = ["GIT_REPO_URL", "GIT_BRANCH",
                  "GIT_AUTO_UPDATE", "GIT_ACCESS_TOKEN", "GIT_SSH_KEY_PATH"]
+
+_LLM_ENV_KEYS = [
+    "OLLAMA_URL", "EMBED_MODEL", "LLM_MODEL", "TOP_K",
+    "OLLAMA_NUM_CTX", "OLLAMA_NUM_PREDICT", "OLLAMA_NUM_THREAD",
+    "OLLAMA_NUM_BATCH", "OLLAMA_TEMPERATURE", "OLLAMA_REPEAT_PENALTY",
+    "PROMPT_TEMPLATE",
+]
+
+_INDEXING_ENV_KEYS = [
+    "FILE_EXTENSIONS", "INCLUDE_FILENAMES", "IGNORE_DIRS",
+    "CHUNK_SIZE", "CHUNK_OVERLAP",
+]
 
 
 def _read_env_vars() -> dict[str, str]:
@@ -219,11 +233,124 @@ def api_git_config_get():
 
 @app.route("/api/git/config", methods=["POST"])
 def api_git_config_save():
-    """Salva a configuração do Git no arquivo .env."""
-    data = request.get_json() or {}
+    """Salva a configuração do Git no arquivo .env e atualiza variáveis em memória."""
+    data: dict[str, str] = request.get_json() or {}
     updates = {k: str(data[k]) for k in _GIT_ENV_KEYS if k in data}
     _save_env_vars(updates)
+
+    if "GIT_REPO_URL" in updates:
+        _cfg.GIT_REPO_URL = updates["GIT_REPO_URL"]
+    if "GIT_BRANCH" in updates:
+        _cfg.GIT_BRANCH = updates["GIT_BRANCH"]
+    if "GIT_ACCESS_TOKEN" in updates:
+        _cfg.GIT_ACCESS_TOKEN = updates["GIT_ACCESS_TOKEN"]
+    if "GIT_SSH_KEY_PATH" in updates:
+        _cfg.GIT_SSH_KEY_PATH = updates["GIT_SSH_KEY_PATH"]
+    if "GIT_AUTO_UPDATE" in updates:
+        _cfg.GIT_AUTO_UPDATE = updates["GIT_AUTO_UPDATE"].lower() in (
+            "1", "true", "yes")
+
     return jsonify({"message": "Configuração salva com sucesso!"})
+
+
+# ---------------------------------------------------------------------------
+# Rotas LLM
+# ---------------------------------------------------------------------------
+
+@app.route("/api/llm/config", methods=["GET"])
+def api_llm_config_get():
+    """Retorna a configuração atual do LLM (valores em memória)."""
+    return jsonify({
+        "OLLAMA_URL": _cfg.OLLAMA_URL,
+        "EMBED_MODEL": _cfg.EMBED_MODEL,
+        "LLM_MODEL": _cfg.LLM_MODEL,
+        "TOP_K": str(_cfg.TOP_K),
+        "OLLAMA_NUM_CTX": str(_cfg.OLLAMA_OPTIONS.get("num_ctx", 8192)),
+        "OLLAMA_NUM_PREDICT": str(_cfg.OLLAMA_OPTIONS.get("num_predict", 1024)),
+        "OLLAMA_NUM_THREAD": str(_cfg.OLLAMA_OPTIONS.get("num_thread", 8)),
+        "OLLAMA_NUM_BATCH": str(_cfg.OLLAMA_OPTIONS.get("num_batch", 512)),
+        "OLLAMA_TEMPERATURE": str(_cfg.OLLAMA_OPTIONS.get("temperature", 0.2)),
+        "OLLAMA_REPEAT_PENALTY": str(_cfg.OLLAMA_OPTIONS.get("repeat_penalty", 1.3)),
+        "PROMPT_TEMPLATE": _cfg.PROMPT_TEMPLATE,
+    })
+
+
+@app.route("/api/llm/config", methods=["POST"])
+def api_llm_config_save():
+    """Salva a configuração do LLM no .env e atualiza variáveis em memória."""
+    data: dict[str, str] = request.get_json() or {}
+    # Encode newlines before saving PROMPT_TEMPLATE to .env (single-line format)
+    if "PROMPT_TEMPLATE" in data:
+        data["PROMPT_TEMPLATE"] = data["PROMPT_TEMPLATE"].replace("\n", "\\n")
+    updates = {k: str(data[k]) for k in _LLM_ENV_KEYS if k in data}
+    _save_env_vars(updates)
+
+    if "OLLAMA_URL" in updates:
+        _cfg.OLLAMA_URL = updates["OLLAMA_URL"]
+    if "EMBED_MODEL" in updates:
+        _cfg.EMBED_MODEL = updates["EMBED_MODEL"]
+    if "LLM_MODEL" in updates:
+        _cfg.LLM_MODEL = updates["LLM_MODEL"]
+    if "TOP_K" in updates:
+        _cfg.TOP_K = int(updates["TOP_K"])
+    if "OLLAMA_NUM_CTX" in updates:
+        _cfg.OLLAMA_OPTIONS["num_ctx"] = int(updates["OLLAMA_NUM_CTX"])
+    if "OLLAMA_NUM_PREDICT" in updates:
+        _cfg.OLLAMA_OPTIONS["num_predict"] = int(updates["OLLAMA_NUM_PREDICT"])
+    if "OLLAMA_NUM_THREAD" in updates:
+        _cfg.OLLAMA_OPTIONS["num_thread"] = int(updates["OLLAMA_NUM_THREAD"])
+    if "OLLAMA_NUM_BATCH" in updates:
+        _cfg.OLLAMA_OPTIONS["num_batch"] = int(updates["OLLAMA_NUM_BATCH"])
+    if "OLLAMA_TEMPERATURE" in updates:
+        _cfg.OLLAMA_OPTIONS["temperature"] = float(
+            updates["OLLAMA_TEMPERATURE"])
+    if "OLLAMA_REPEAT_PENALTY" in updates:
+        _cfg.OLLAMA_OPTIONS["repeat_penalty"] = float(
+            updates["OLLAMA_REPEAT_PENALTY"])
+    if "PROMPT_TEMPLATE" in updates:
+        _cfg.PROMPT_TEMPLATE = updates["PROMPT_TEMPLATE"].replace("\\n", "\n")
+
+    return jsonify({"message": "Configuração LLM salva com sucesso!"})
+
+
+# ---------------------------------------------------------------------------
+# Rotas Indexação
+# ---------------------------------------------------------------------------
+
+@app.route("/api/indexing/config", methods=["GET"])
+def api_indexing_config_get():
+    """Retorna a configuração atual de indexação (valores em memória)."""
+    return jsonify({
+        "FILE_EXTENSIONS": ",".join(_cfg.FILE_EXTENSIONS),
+        "INCLUDE_FILENAMES": ",".join(_cfg.INCLUDE_FILENAMES),
+        "IGNORE_DIRS": ",".join(_cfg.IGNORE_DIRS),
+        "CHUNK_SIZE": str(_cfg.CHUNK_SIZE),
+        "CHUNK_OVERLAP": str(_cfg.CHUNK_OVERLAP),
+    })
+
+
+@app.route("/api/indexing/config", methods=["POST"])
+def api_indexing_config_save():
+    """Salva a configuração de indexação no .env e atualiza variáveis em memória."""
+    data: dict[str, str] = request.get_json() or {}
+    updates = {k: str(data[k]) for k in _INDEXING_ENV_KEYS if k in data}
+    _save_env_vars(updates)
+
+    if "FILE_EXTENSIONS" in updates:
+        _cfg.FILE_EXTENSIONS = [
+            x.strip() for x in updates["FILE_EXTENSIONS"].split(",") if x.strip()]
+    if "INCLUDE_FILENAMES" in updates:
+        _cfg.INCLUDE_FILENAMES = [
+            x.strip() for x in updates["INCLUDE_FILENAMES"].split(",") if x.strip()]
+    if "IGNORE_DIRS" in updates:
+        _cfg.IGNORE_DIRS = [x.strip()
+                            for x in updates["IGNORE_DIRS"].split(",") if x.strip()]
+    if "CHUNK_SIZE" in updates:
+        _cfg.CHUNK_SIZE = int(updates["CHUNK_SIZE"])
+    if "CHUNK_OVERLAP" in updates:
+        _cfg.CHUNK_OVERLAP = int(updates["CHUNK_OVERLAP"])
+
+    return jsonify({"message": "Configuração de indexação salva com sucesso!"})
 
 
 def _sse(event_type: str, text: str) -> str:
@@ -262,10 +389,10 @@ def _index_into_collection() -> int:
 @app.route("/api/git/sync", methods=["POST"])
 def api_git_sync():
     """Clona/atualiza repositório git e reindexa a codebase (SSE)."""
-    data = request.get_json() or {}
-    repo_url = data.get("repo_url") or None
-    branch = data.get("branch") or None
-    token = data.get("token") or None
+    data: dict[str, str] = request.get_json() or {}
+    repo_url: str | None = data.get("repo_url") or None
+    branch: str | None = data.get("branch") or None
+    token: str | None = data.get("token") or None
 
     def event_stream():
         from minorag.git import clone_repo
