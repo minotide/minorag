@@ -190,54 +190,58 @@ Aumentar esse número pode melhorar a qualidade das respostas em projetos grande
 
 ### ✏️ Personalizar o prompt de resposta
 
-O prompt enviado ao LLM é construído pela função `build_prompt` em `minorag/retriever.py`. Editar essa função permite ajustar o comportamento do modelo sem mudar nada mais.
+O template do prompt fica em `minorag/config.py` na variável `PROMPT_TEMPLATE` e é usado por `build_prompt` em `minorag/retriever.py`. Para customizar, basta editar o `config.py`.
 
-**Prompt atual:**
+**Template padrão em `config.py`:**
 
 ```python
-def build_prompt(question: str, chunks: str) -> str:
-    return f"""You are a senior software engineer.
+PROMPT_TEMPLATE = """
+Você é um engenheiro de software sênior.
+Use o contexto abaixo para responder em português.
 
-Use the code context below to answer.
-
-Context:
+Contexto:
 ----------------
 {chunks}
 ----------------
 
-Question:
+Pergunta:
 {question}
 
-Answer clearly and technically."""
+Estruture sempre sua resposta em três seções:
+1. Resposta direta.
+2. Referências de código (arquivo + linha, se possível).
+3. Advertências ou casos extremos.
+
+Responda de forma clara e técnica.
+"""
 ```
+
+> Os marcadores `{chunks}` e `{question}` são obrigatórios — são substituídos automaticamente pelo retriever antes de enviar ao modelo.
 
 **Exemplos de customização:**
 
-Responder em português:
+Focar mais em performance e otimização:
 ```python
-return f"""Você é um engenheiro de software sênior.
-Use o contexto de código abaixo para responder em português.
-...
-```
+PROMPT_TEMPLATE = """
+Você é um engenheiro de software sênior especializado em performance e otimização de código.
+Use o contexto abaixo para responder em português.
 
-Focar em um domínio específico:
-```python
-return f"""You are a senior backend engineer specialized in Java Spring Boot.
-Prioritize explaining business rules and data flow.
-...
-```
+Contexto:
+----------------
+{chunks}
+----------------
 
-Forçar um formato de resposta:
-```python
-return f"""You are a senior software engineer.
-Always structure your answer in three sections:
-1. Direct answer
-2. Code references (file + line if possible)
-3. Caveats or edge cases
-...
-```
+Pergunta:
+{question}
 
-As variáveis `{chunks}` (contexto recuperado do índice) e `{question}` (pergunta do usuário) devem sempre estar presentes no prompt.
+Estruture sempre sua resposta em três seções:
+1. Resposta direta.
+2. Referências de código (arquivo + linha, se possível).
+3. Advertências ou casos extremos.
+
+Responda de forma clara e técnica. Dê sugestões de otimização e melhores práticas quando relevante.
+"""
+```
 
 ---
 
