@@ -199,7 +199,7 @@ header h1 span {
 /* ---- Elementos de formulário comuns ---- */
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 .close-btn {

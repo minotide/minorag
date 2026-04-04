@@ -9,7 +9,7 @@ import json as _json
 import os
 
 import chromadb
-from flask import Flask, Response, jsonify, request, send_from_directory, stream_with_context
+from flask import Flask, Response, jsonify, request, stream_with_context
 
 from minorag.config import CHROMA_PATH, CODE_PATH, ENV_PATH
 from minorag import config as _cfg
@@ -23,9 +23,33 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 app = Flask(__name__, static_folder=STATIC_DIR)
 
 
+def _asset_version(filename: str) -> str:
+    """Retorna o mtime do arquivo como versão para cache-busting."""
+    path = os.path.join(STATIC_DIR, filename)
+    try:
+        return str(int(os.path.getmtime(path)))
+    except OSError:
+        return "0"
+
+
 @app.route("/")
 def index():
-    return send_from_directory(STATIC_DIR, "index.html")
+    with open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8") as f:
+        html = f.read()
+
+    html = html.replace(
+        "/static/style.css",
+        f"/static/style.css?v={_asset_version('style.css')}"
+    )
+
+    html = html.replace(
+        "/static/app.js",
+        f"/static/app.js?v={_asset_version('app.js')}"
+    )
+
+    response = Response(html, mimetype="text/html")
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.route("/api/index", methods=["POST"])
