@@ -358,7 +358,7 @@ async function sendQuestion() {
                 if (!line.startsWith("data: ")) continue;
                 const data = JSON.parse(line.slice(6));
                 if (data.type === "log") {
-                    thinking.textContent = data.text;
+                    thinking.innerHTML = '<span class="spinner"></span>' + data.text;
                 } else if (data.type === "token") {
                     if (!answerEl) {
                         thinking.remove();

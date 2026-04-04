@@ -52,9 +52,6 @@ OLLAMA_OPTIONS: dict[str, int | float] = {
 _PROMPT_DEFAULT = (
     "Você é um assistente de código. Responda SEMPRE em português.\n"
     "Responda a pergunta utilizando APENAS os trechos de código fornecidos abaixo.\n"
-    "Não utilize nenhum conhecimento além do que está nos trechos.\n"
-    "Se a pergunta não estiver relacionada ao código fornecido, responda exatamente:\n"
-    "\"Essa pergunta está fora do contexto do seu código.\"\n"
     "\n"
     "Trechos de código: {chunks}\n"
     "\n"
