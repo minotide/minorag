@@ -131,7 +131,7 @@ def api_query():
     try:
         collection = client.get_collection("codebase")
     except Exception:
-        return jsonify({"error": "Índice não encontrado. Indexe o código primeiro."}), 400
+        return jsonify({"error": "Índice não encontrado. Indexe o código primeiro. Caminho: Repositório / Sincronizar Codebase"}), 400
 
     q_emb = embed(question)
 
@@ -166,7 +166,7 @@ def api_query_stream():
         try:
             collection = client.get_collection("codebase")
         except Exception:
-            yield f"data: {_json.dumps({'type': 'error', 'text': 'Índice não encontrado. Indexe o código primeiro.'})}\n\n"
+            yield f"data: {_json.dumps({'type': 'error', 'text': 'Índice não encontrado. Indexe o código primeiro. Caminho: Repositório / Sincronizar Codebase'})}\n\n"
             return
 
         yield f"data: {_json.dumps({'type': 'log', 'text': 'Gerando embedding da pergunta...'})}\n\n"

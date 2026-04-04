@@ -72,7 +72,7 @@ Para recomeçar do zero, clique em **Limpar Codebase** — remove todos os arqui
 
 Digite sua pergunta no campo de texto e pressione **Enter** ou clique em **Enviar**.
 
-> Se o índice estiver vazio, a interface exibe **"Índice não encontrado. Indexe o código primeiro."** — clique em **Sincronizar Codebase** para resolver.
+> Se o índice estiver vazio, a interface exibe **"Índice não encontrado. Indexe o código primeiro. Caminho: Repositório / Sincronizar Codebase"** — clique em **Sincronizar Codebase** para resolver.
 
 ---
 

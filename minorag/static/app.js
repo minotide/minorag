@@ -332,7 +332,8 @@ async function sendQuestion() {
     btnSend.disabled = true;
 
     addMsg(question, "user");
-    const thinking = addMsg("Pensando...", "bot typing");
+    const thinking = addMsg("", "bot typing");
+    thinking.innerHTML = '<span class="spinner"></span>Pensando...'
 
     try {
         const response = await fetch("/api/query/stream", {

@@ -431,6 +431,32 @@ header h1 span {
     line-height: 2;
 }
 
+/* ---- Spinner ---- */
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #30363d;
+    border-top-color: #58a6ff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+
+.msg.typing {
+    display: flex;
+    align-items: center;
+}
+
 /* ---- Tooltips ---- */
 
 .label-row {
