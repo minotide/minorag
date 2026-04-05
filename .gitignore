@@ -5,5 +5,5 @@ __pycache__/
 .codebase/*
 !.codebase/.gitkeep
 .env
-spec.md
+sdd.md
 
