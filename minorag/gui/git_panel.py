@@ -146,14 +146,14 @@ class GitPanel(QWidget):
 
     @Slot(str)
     def _on_sync_error(self, text: str) -> None:
-        self._set_status(f"✗ {text}", error=True)
+        self._set_status(f"{text}", error=True)
         self._btn_sync.setEnabled(True)
         self._btn_sync.setText("Sincronizar Codebase")
         self._sync_worker = None
 
     @Slot(str)
     def _on_sync_done(self, text: str) -> None:
-        self._set_status(f"✓ {text}", success=True)
+        self._set_status(f"{text}", success=True)
         self._btn_sync.setEnabled(True)
         self._btn_sync.setText("Sincronizar Codebase")
         self._sync_worker = None
@@ -168,7 +168,7 @@ class GitPanel(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             clear_codebase()
             self._set_status(
-                "✓ Codebase e índice removidos com sucesso.", success=True)
+                "Codebase e índice removidos com sucesso.", success=True)
 
     def _set_status(self, text: str, success: bool = False, error: bool = False) -> None:
         if success:

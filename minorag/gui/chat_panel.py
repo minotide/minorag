@@ -75,7 +75,7 @@ class _BotWidget(QWidget):
 
     def _copy(self) -> None:
         QApplication.clipboard().setText(self._text)
-        self._btn_copy.setText("✓  Copiado!")
+        self._btn_copy.setText("Copiado!")
         QTimer.singleShot(2000, lambda: self._btn_copy.setText("⎘  Copiar resposta"))
 
 

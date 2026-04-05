@@ -70,10 +70,10 @@ class MainWindow(QMainWindow):
         self._llm = LlmPanel()
         self._indexing = IndexingPanel()
 
-        self._tabs.addTab(self._chat, "💬 Chat")
-        self._tabs.addTab(self._git, "⚙ Repositório")
-        self._tabs.addTab(self._llm, "⚙ LLM")
-        self._tabs.addTab(self._indexing, "⚙ Indexação")
+        self._tabs.addTab(self._chat, "Chat")
+        self._tabs.addTab(self._git, "Repositório")
+        self._tabs.addTab(self._llm, "LLM")
+        self._tabs.addTab(self._indexing, "Indexação")
 
         main_layout.addWidget(self._tabs, 1)
 
