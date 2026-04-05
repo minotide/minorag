@@ -1,8 +1,12 @@
 #!/bin/bash
 set -e
 
-# Install system dependencies
-sudo apt-get update && sudo apt-get install -y zstd
+# Install system dependencies (Qt6/xcb for native X11 rendering)
+sudo apt-get update && sudo apt-get install -y \
+    zstd libgl1 libegl1 libxkbcommon0 libdbus-1-3 libxcb-cursor0 \
+    x11-utils libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+    libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 \
+    libxcb-xkb1 libxkbcommon-x11-0
 
 # Install Python dependencies
 pip install --upgrade pip

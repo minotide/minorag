@@ -1,8 +1,5 @@
 import threading
 
-from minorag.config import WEB_PORT
-from minorag.web import app
-
 
 def _auto_index():
     """Executa indexação automática na inicialização quando aplicável.
@@ -34,5 +31,5 @@ def _auto_index():
 
 if __name__ == "__main__":
     threading.Thread(target=_auto_index, daemon=True).start()
-    print(f"minorag iniciado em http://localhost:{WEB_PORT}")
-    app.run(host="0.0.0.0", port=WEB_PORT, debug=False)
+    from minorag.gui import run_gui
+    run_gui()

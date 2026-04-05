@@ -28,6 +28,21 @@ O modelo utilizado (`qwen2.5-coder:3b`) é leve (~2 GB) e roda bem em CPU ***(GP
 
 ---
 
+## 🖼️ Observação sobre interface gráfica (Qt)
+
+A interface gráfica do minorag usa Qt (PySide6) e é exibida diretamente no seu desktop, mesmo rodando dentro do container.
+
+- **VS Code Dev Containers** normalmente já repassa o display do host para o container automaticamente, sem necessidade de configuração extra.
+- **Se a janela não abrir** ou aparecer erro de permissão do X11, execute no terminal do host (fora do container):
+
+```bash
+xhost +local:docker
+```
+
+Isso libera o acesso do container ao seu servidor gráfico local. Em ambientes modernos, geralmente não é necessário, mas pode ser útil em casos de restrição de permissões.
+
+---
+
 ## 🚀 Começar
 
 1. Abra a pasta do projeto no VS Code
@@ -37,9 +52,8 @@ O modelo utilizado (`qwen2.5-coder:3b`) é leve (~2 GB) e roda bem em CPU ***(GP
 
 Ao iniciar o container:
 - O servidor **Ollama** sobe automaticamente (`postStartCommand`)
-- O servidor **web** sobe automaticamente (`postAttachCommand`) na porta `5000`
-
-Após o container subir, acesse **http://localhost:5000** no navegador.
+- A **janela da aplicação** abre automaticamente (`postAttachCommand`) diretamente no seu desktop
+- Caso feche a janela, reabra pelo terminal do container `python main.py`
 
 ---
 
@@ -49,13 +63,13 @@ Após o container subir, acesse **http://localhost:5000** no navegador.
 
 ### 1. Configurar repositório
 
-Abra o painel **⚙ Repositório** no canto superior direito e informe:
+Clique na aba **⚙ Repositório** e informe:
 
 - **URL** do repositório Git (HTTPS ou SSH)
 - **Branch** desejada (padrão: `main`)
 - **Token de acesso** para repositórios privados (opcional)
 - **Caminho chave SSH** para autenticação (opcional, ex: `~/.ssh/id_rsa`)
-- **Atualizar no startup** — marque para clonar/atualizar automaticamente ao iniciar o servidor
+- **Atualizar no startup** — marque para clonar/atualizar automaticamente ao abrir a aplicação
 - Clique em **Salvar no .env** para guardar as configurações (salvas **no arquivo `.env` do projeto**, dentro do seu container)
 
 > Não se esqueça de manter o arquivo `.env` no `.gitignore` para não vazar credenciais.
@@ -76,11 +90,11 @@ Digite sua pergunta no campo de texto e pressione **Enter** ou clique em **Envia
 
 ---
 
-## ⚙️ Configuração via interface web
+## ⚙️ Configuração via interface
 
 Todos os parâmetros do projeto são configuráveis diretamente pela interface, sem precisar editar arquivos. Cada painel salva as configurações no `.env` e aplica as mudanças imediatamente na sessão atual.
 
-O botão **Restaurar .env** (canto superior direito) sobrescreve o `.env` com todos os valores padrão e recarrega as configurações em memória — útil para desfazer edições manuais incorretas.
+O botão **Restaurar .env** (canto superior direito da janela) sobrescreve o `.env` com todos os valores padrão e recarrega as configurações em memória — útil para desfazer edições manuais incorretas.
 
 ### Painel ⚙ Repositório
 
@@ -136,11 +150,36 @@ Controla quais arquivos serão processados e como são divididos:
 
 > Alterações de indexação têm efeito na **próxima** vez que você clicar em Sincronizar Codebase.
 
-### Porta do servidor
+---
 
-A variável `WEB_PORT` (padrão `5000`) requer reinício do servidor para ter efeito — edite diretamente o `.env` e reinicie.
+## 🗂️ Organização do projeto
 
-> **Atenção:** a porta em `portsAttributes` no `devcontainer.json` é hardcoded como `5000`. Se você alterar `WEB_PORT` no `.env`, o servidor subirá na nova porta, mas o VS Code **não encaminhará essa porta automaticamente** ao reabrir o projeto — você precisará também atualizar o valor em `devcontainer.json` e fazer rebuild do container.
+```
+minorag/
+├── main.py                      # Ponto de entrada — auto-indexação em thread + inicia a GUI
+├── requirements.txt             # Dependências Python
+├── .env                         # Configurações locais (não versionado)
+│
+└── minorag/
+    ├── config.py                # Leitura do .env e valores padrão de todas as variáveis
+    ├── chunkers.py              # Estratégias de chunking por linguagem (AST, blocos, SQL...)
+    ├── indexer.py               # Leitura de arquivos do .codebase/
+    ├── retriever.py             # Busca no ChromaDB e montagem do prompt
+    ├── ollama.py                # Wrapper para embed e generate_stream_iter
+    ├── git.py                   # Clone e atualização do repositório
+    │
+    └── gui/                     # Pacote da interface gráfica (PySide6)
+        ├── __init__.py          # Exporta run_gui()
+        ├── style.qss            # Stylesheet Qt
+        ├── widgets.py           # Helpers visuais: make_label, make_separator, load_style
+        ├── workers.py           # QThreads: QueryWorker (RAG) e SyncWorker (clone + indexação)
+        ├── env_helpers.py       # Leitura/escrita do .env: save_env_vars, reset, clear_codebase
+        ├── chat_panel.py        # Painel de chat com streaming de tokens
+        ├── git_panel.py         # Painel de configuração Git
+        ├── llm_panel.py         # Painel de configuração LLM e prompt
+        ├── indexing_panel.py    # Painel de configuração de indexação
+        └── main_window.py       # Janela principal com abas e header
+```
 
 ---
 

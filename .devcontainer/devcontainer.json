@@ -21,8 +21,12 @@
     "postStartCommand": "bash .devcontainer/start-ollama.sh",
     "postAttachCommand": "bash .devcontainer/start-app.sh",
     "containerEnv": {
-        "WEB_PORT": "5000"
+        "DISPLAY": "${localEnv:DISPLAY}",
+        "WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
+        "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}"
     },
-    "mounts": [],
+    "mounts": [
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached"
+    ],
     "remoteUser": "vscode"
 }

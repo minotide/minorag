@@ -1,4 +1,4 @@
 requests
 chromadb
-flask
+PySide6
 python-dotenv

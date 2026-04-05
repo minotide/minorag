@@ -129,9 +129,3 @@ IGNORE_DIRS: list[str] = _parse_list_env("IGNORE_DIRS", _DEFAULT_IGNORE_DIRS)
 
 CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "1500"))
 CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "200"))
-
-# ---------------------------------------------------------------------------
-# Web
-# ---------------------------------------------------------------------------
-
-WEB_PORT: int = int(os.getenv("WEB_PORT", "5000"))
