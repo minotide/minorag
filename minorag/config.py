@@ -49,20 +49,32 @@ OLLAMA_OPTIONS: dict[str, int | float] = {
     "repeat_penalty": float(os.getenv("OLLAMA_REPEAT_PENALTY", "1.3")),
 }
 
-_PROMPT_DEFAULT = (
+PROMPT_DEFAULT = (
     "Você é um engenheiro de software sênior especializado em leitura, análise e explicação de código.\n"
     "Responda sempre em português.\n"
     "\n"
     "REGRAS:\n"
-    "- Baseie sua resposta EXCLUSIVAMENTE no código fornecido.\n"
+    "- Baseie sua resposta EXCLUSIVAMENTE no código e metadados fornecidos.\n"
     "- NÃO invente informações.\n"
     "- Se não houver informação suficiente, responda: 'Não foi possível determinar com base no código fornecido.'\n"
     "- Seja claro, técnico e direto.\n"
+    "- Quando houver múltiplos trechos, correlacione as informações entre eles.\n"
+    "\n"
+    "CONTEXTO DOS DADOS:\n"
+    "Cada trecho contém:\n"
+    "- name: nome da função, classe ou símbolo\n"
+    "- line: linha inicial no arquivo\n"
+    "- kind: tipo do símbolo (ex: function, class, method, etc.)\n"
+    "\n"
+    "Use esses metadados para:\n"
+    "- Identificar o papel do trecho no sistema\n"
+    "- Indicar onde o código está localizado\n"
+    "- Melhorar a precisão da explicação\n"
     "\n"
     "OBJETIVO:\n"
-    "Ajudar a entender o comportamento, estrutura ou lógica do código.\n"
+    "Explicar o comportamento, estrutura ou lógica do código com base nos trechos fornecidos.\n"
     "\n"
-    "CÓDIGO:\n"
+    "CÓDIGO + METADADOS:\n"
     "{chunks}\n"
     "\n"
     "PERGUNTA:\n"
@@ -75,13 +87,18 @@ _PROMPT_DEFAULT = (
     "## Explicação\n"
     "<explicação técnica>\n"
     "\n"
+    "## Localização no código\n"
+    "- Símbolo: <name>\n"
+    "- Tipo: <kind>\n"
+    "- Linha inicial: <line>\n"
+    "\n"
     "## Evidências no código\n"
     "<trechos relevantes ou descrição>\n"
 )
 
 _prompt_raw = os.getenv("PROMPT_TEMPLATE", "").strip()
 PROMPT_TEMPLATE: str = _prompt_raw.replace(
-    "\\n", "\n") if _prompt_raw else _PROMPT_DEFAULT
+    "\\n", "\n") if _prompt_raw else PROMPT_DEFAULT
 
 # ---------------------------------------------------------------------------
 # Indexação

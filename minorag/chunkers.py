@@ -12,8 +12,16 @@ Camada 4 — fallback por tamanho fixo:     qualquer outra extensão
 
 import ast
 import re
+from typing import TypedDict
 
 from minorag import config as _cfg
+
+
+class ChunkMeta(TypedDict):
+    name: str
+    line: int
+    kind: str
+
 
 _JAVA_SIG = re.compile(
     r"^\s*(?:(?:public|private|protected|static|final|abstract|"
@@ -100,20 +108,35 @@ _BRACE_SIGS: dict[str, re.Pattern[str]] = {
 }
 
 
-def chunk_text(text: str) -> list[str]:
+def _name_from_first_line(text: str) -> str:
+    """Extrai o nome do símbolo da primeira linha de um bloco."""
+    first = text.strip().splitlines()[0] if text.strip() else ""
+    m = re.search(
+        r'\b(?:class|interface|enum|record|struct|trait|impl|module|object)\s+(\w+)', first)
+    if m:
+        return m.group(1)
+    m = re.search(r'(\w+)\s*\(', first)
+    if m:
+        return m.group(1)
+    return ""
+
+
+def chunk_text(text: str) -> list[tuple[str, ChunkMeta]]:
     """Divide um texto em chunks de tamanho fixo com sobreposição (fallback)."""
-    chunks: list[str] = []
+    chunks: list[tuple[str, ChunkMeta]] = []
     start = 0
     while start < len(text):
-        chunks.append(text[start: start + _cfg.CHUNK_SIZE])
+        chunk = text[start: start + _cfg.CHUNK_SIZE]
+        line = text[:start].count('\n') + 1
+        chunks.append((chunk, ChunkMeta(name="", line=line, kind="")))
         start += _cfg.CHUNK_SIZE - _cfg.CHUNK_OVERLAP
     return chunks
 
 
-def _extract_brace_blocks(source: str, sig_re: re.Pattern[str]) -> list[str]:
+def _extract_brace_blocks(source: str, sig_re: re.Pattern[str]) -> list[tuple[str, ChunkMeta]]:
     """Extrai blocos { } que iniciam com uma assinatura reconhecida."""
     lines = source.splitlines(keepends=True)
-    blocks: list[str] = []
+    blocks: list[tuple[str, ChunkMeta]] = []
     used: set[int] = set()
 
     for m in sig_re.finditer(source):
@@ -136,16 +159,21 @@ def _extract_brace_blocks(source: str, sig_re: re.Pattern[str]) -> list[str]:
             if found_open and depth <= 0:
                 for j in range(start_line, i + 1):
                     used.add(j)
-                blocks.append("".join(block))
+                block_text = "".join(block)
+                blocks.append((block_text, ChunkMeta(
+                    name=_name_from_first_line(block_text),
+                    line=start_line + 1,
+                    kind="block",
+                )))
                 break
 
     return blocks if blocks else chunk_text(source)
 
 
-def _extract_end_blocks(source: str) -> list[str]:
+def _extract_end_blocks(source: str) -> list[tuple[str, ChunkMeta]]:
     """Extrai blocos def/class...end para Ruby."""
     lines = source.splitlines(keepends=True)
-    blocks: list[str] = []
+    blocks: list[tuple[str, ChunkMeta]] = []
     used: set[int] = set()
 
     for m in _END_BLOCK_SIG.finditer(source):
@@ -166,13 +194,18 @@ def _extract_end_blocks(source: str) -> list[str]:
             if depth <= 0 and len(block) > 1:
                 for j in range(start_line, i + 1):
                     used.add(j)
-                blocks.append("".join(block))
+                block_text = "".join(block)
+                blocks.append((block_text, ChunkMeta(
+                    name=_name_from_first_line(block_text),
+                    line=start_line + 1,
+                    kind="block",
+                )))
                 break
 
     return blocks if blocks else chunk_text(source)
 
 
-def _chunk_python(source: str) -> list[str]:
+def _chunk_python(source: str) -> list[tuple[str, ChunkMeta]]:
     """Chunking semântico para Python via AST."""
     try:
         tree = ast.parse(source)
@@ -180,41 +213,66 @@ def _chunk_python(source: str) -> list[str]:
         return chunk_text(source)
 
     lines = source.splitlines(keepends=True)
-    chunks: list[str] = []
+    chunks: list[tuple[str, ChunkMeta]] = []
 
     def _src(node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) -> str:
         return "".join(lines[node.lineno - 1: node.end_lineno])
 
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            chunks.append(_src(node))
+            chunks.append((_src(node), ChunkMeta(
+                name=node.name,
+                line=node.lineno,
+                kind="function",
+            )))
         elif isinstance(node, ast.ClassDef):
             full = _src(node)
             if len(full) <= _cfg.CHUNK_SIZE * 2:
-                chunks.append(full)
+                chunks.append((full, ChunkMeta(
+                    name=node.name,
+                    line=node.lineno,
+                    kind="class",
+                )))
             else:
                 first_child = node.body[0].lineno - 1
-                chunks.append("".join(lines[node.lineno - 1: first_child]))
+                chunks.append(("".join(lines[node.lineno - 1: first_child]), ChunkMeta(
+                    name=node.name,
+                    line=node.lineno,
+                    kind="class",
+                )))
                 for child in node.body:
                     if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                        chunks.append(_src(child))
+                        chunks.append((_src(child), ChunkMeta(
+                            name=f"{node.name}.{child.name}",
+                            line=child.lineno,
+                            kind="method",
+                        )))
 
     return chunks if chunks else chunk_text(source)
 
 
-def _chunk_sql(source: str) -> list[str]:
+def _chunk_sql(source: str) -> list[tuple[str, ChunkMeta]]:
     """Divide SQL por statements terminados em ';'."""
     statements = re.split(r";\s*(?:\n|$)", source, flags=re.MULTILINE)
-    return [s.strip() for s in statements if len(s.strip()) > 20]
+    result: list[tuple[str, ChunkMeta]] = []
+    for s in statements:
+        s = s.strip()
+        if len(s) > 20:
+            m = re.search(
+                r'\b(?:FUNCTION|PROCEDURE|VIEW|TABLE|TRIGGER|INDEX)\s+(\w+)', s, re.IGNORECASE)
+            result.append(
+                (s, ChunkMeta(name=m.group(1) if m else "", line=0, kind="statement")))
+    return result
 
 
-def chunk_by_language(source: str, ext: str) -> list[str]:
+def chunk_by_language(source: str, ext: str) -> list[tuple[str, ChunkMeta]]:
     """
     Despacha para o chunker adequado conforme a extensão do arquivo.
 
     @param source: Conteúdo do arquivo.
     @param ext: Extensão do arquivo (ex: '.py', '.java').
-    @return: Lista de chunks semânticos ou por tamanho fixo.
+    @return: Lista de tuplas (texto_do_chunk, metadados) com chunks semânticos ou por tamanho fixo.
+             Os metadados contêm: name (nome da função/classe), line (linha inicial), kind (tipo do símbolo).
     """
     if ext == ".py":
         return _chunk_python(source)

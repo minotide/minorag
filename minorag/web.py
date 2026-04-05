@@ -97,7 +97,7 @@ def api_index():
         ext = os.path.splitext(path)[1].lower()
         chunks = chunk_by_language(content, ext)
 
-        for chunk in chunks:
+        for chunk, chunk_meta in chunks:
             full_chunk = f"FILE: {path}\n\n{chunk}"
             emb = embed(full_chunk)
 
@@ -105,7 +105,13 @@ def api_index():
                 ids=[str(id_counter)],
                 embeddings=[emb],
                 documents=[full_chunk],
-                metadatas=[{"file": path}],
+                metadatas=[{
+                    "file": path,
+                    "name": chunk_meta.get("name", ""),
+                    "line": chunk_meta.get("line", 0),
+                    "kind": chunk_meta.get("kind", ""),
+                    "language": ext.lstrip("."),
+                }],
             )
             id_counter += 1
 
@@ -446,9 +452,7 @@ def api_indexing_config_save():
 @app.route("/api/env/reset", methods=["POST"])
 def api_env_reset():
     """Sobrescreve o .env com todos os valores padrão e atualiza a memória."""
-    import shutil
-
-    _PROMPT_DEFAULT_ENCODED = _cfg._PROMPT_DEFAULT.replace("\n", "\\n")
+    _PROMPT_DEFAULT_ENCODED = _cfg.PROMPT_DEFAULT.replace("\n", "\\n")
 
     defaults = {
         "GIT_REPO_URL": "",
@@ -498,7 +502,7 @@ def api_env_reset():
     _cfg.OLLAMA_OPTIONS["num_batch"] = 512
     _cfg.OLLAMA_OPTIONS["temperature"] = 0.2
     _cfg.OLLAMA_OPTIONS["repeat_penalty"] = 1.3
-    _cfg.PROMPT_TEMPLATE = _cfg._PROMPT_DEFAULT
+    _cfg.PROMPT_TEMPLATE = _cfg.PROMPT_DEFAULT
     _cfg.FILE_EXTENSIONS = [x.strip()
                             for x in defaults["FILE_EXTENSIONS"].split(",")]
     _cfg.INCLUDE_FILENAMES = ["architecture.md"]
@@ -554,11 +558,12 @@ def _index_into_collection_stream() -> Iterator[str]:
     docs = read_files(CODE_PATH)
     total_files = len(docs)
 
-    all_chunks: list[tuple[str, str]] = []
+    all_chunks: list[tuple[str, str, dict[str, str | int]]] = []
     for path, content in docs:
         ext = os.path.splitext(path)[1].lower()
-        for chunk in chunk_by_language(content, ext):
-            all_chunks.append((path, chunk))
+        for chunk, chunk_meta in chunk_by_language(content, ext):
+            all_chunks.append((path, chunk, {
+                              "file": path, "name": chunk_meta["name"], "line": chunk_meta["line"], "kind": chunk_meta["kind"], "language": ext.lstrip(".")}))
 
     total_chunks = len(all_chunks)
     yield _sse("log", f"{total_files} arquivo(s) encontrado(s) — {total_chunks} chunks para indexar...")
@@ -570,14 +575,14 @@ def _index_into_collection_stream() -> Iterator[str]:
         pass
     collection = client.get_or_create_collection("codebase")
 
-    for i, (path, chunk) in enumerate(all_chunks, start=1):
+    for i, (path, chunk, metadata) in enumerate(all_chunks, start=1):
         full_chunk = f"FILE: {path}\n\n{chunk}"
         emb = embed(full_chunk)
         collection.add(
             ids=[str(i - 1)],
             embeddings=[emb],
             documents=[full_chunk],
-            metadatas=[{"file": path}],
+            metadatas=[metadata],
         )
         yield _sse("log", f"Indexando chunk {i}/{total_chunks}...")
 

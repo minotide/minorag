@@ -60,7 +60,7 @@ def index_code():
         ext = os.path.splitext(path)[1].lower()
         chunks = chunk_by_language(content, ext)
 
-        for chunk in chunks:
+        for chunk, chunk_meta in chunks:
             if not chunk.strip():
                 continue
             full_chunk = f"FILE: {path}\n\n{chunk}"
@@ -70,7 +70,13 @@ def index_code():
                 ids=[str(id_counter)],
                 embeddings=[emb],
                 documents=[full_chunk],
-                metadatas=[{"file": path}],
+                metadatas=[{
+                    "file": path,
+                    "name": chunk_meta.get("name", ""),
+                    "line": chunk_meta.get("line", 0),
+                    "kind": chunk_meta.get("kind", ""),
+                    "language": ext.lstrip("."),
+                }],
             )
 
             id_counter += 1
