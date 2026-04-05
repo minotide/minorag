@@ -1,6 +1,6 @@
 """Painel de configuração Git."""
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QTimer, Slot
 from PySide6.QtWidgets import (
     QCheckBox, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
     QMessageBox, QPushButton, QVBoxLayout, QWidget,
@@ -55,11 +55,6 @@ class GitPanel(QWidget):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(8)
 
-        btn_save = QPushButton("Salvar no .env")
-        btn_save.setObjectName("btnSave")
-        btn_save.clicked.connect(self._save_config)
-        btn_layout.addWidget(btn_save)
-
         self._btn_sync = QPushButton("Sincronizar Codebase")
         self._btn_sync.setObjectName("btnSync")
         self._btn_sync.clicked.connect(self._sync)
@@ -81,12 +76,27 @@ class GitPanel(QWidget):
 
         self.reload_config()
 
+        # Auto-save com debounce de 700 ms
+        self._save_timer = QTimer(self)
+        self._save_timer.setSingleShot(True)
+        self._save_timer.setInterval(700)
+        self._save_timer.timeout.connect(self._save_config)
+        self._url.textChanged.connect(self._schedule_save)
+        self._branch.textChanged.connect(self._schedule_save)
+        self._token.textChanged.connect(self._schedule_save)
+        self._ssh.textChanged.connect(self._schedule_save)
+        self._auto_update.stateChanged.connect(self._schedule_save)
+
     def reload_config(self) -> None:
+        for w in (self._url, self._branch, self._token, self._ssh, self._auto_update):
+            w.blockSignals(True)
         self._url.setText(_cfg.GIT_REPO_URL)
         self._branch.setText(_cfg.GIT_BRANCH)
         self._token.setText(_cfg.GIT_ACCESS_TOKEN)
         self._ssh.setText(_cfg.GIT_SSH_KEY_PATH)
         self._auto_update.setChecked(_cfg.GIT_AUTO_UPDATE)
+        for w in (self._url, self._branch, self._token, self._ssh, self._auto_update):
+            w.blockSignals(False)
 
     def _save_config(self) -> None:
         updates = {
@@ -104,11 +114,18 @@ class GitPanel(QWidget):
         _cfg.GIT_SSH_KEY_PATH = updates["GIT_SSH_KEY_PATH"]
         _cfg.GIT_AUTO_UPDATE = self._auto_update.isChecked()
 
-        self._set_status("✓ Configuração salva com sucesso!", success=True)
+    def _schedule_save(self) -> None:
+        self._save_timer.start()
+
+    def _flush_save(self) -> None:
+        """Persiste imediatamente, cancelando qualquer debounce pendente."""
+        self._save_timer.stop()
+        self._save_config()
 
     def _sync(self) -> None:
         if self._sync_worker is not None:
             return
+        self._flush_save()
         self._btn_sync.setEnabled(False)
         self._btn_sync.setText("Sincronizando...")
         self._set_status("")
@@ -130,6 +147,9 @@ class GitPanel(QWidget):
     @Slot(str)
     def _on_sync_error(self, text: str) -> None:
         self._set_status(f"✗ {text}", error=True)
+        self._btn_sync.setEnabled(True)
+        self._btn_sync.setText("Sincronizar Codebase")
+        self._sync_worker = None
 
     @Slot(str)
     def _on_sync_done(self, text: str) -> None:

@@ -1,7 +1,8 @@
 """Painel de configuração de Indexação."""
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
-    QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QGridLayout, QLabel, QLineEdit,
     QSpinBox, QVBoxLayout, QWidget,
 )
 
@@ -53,15 +54,6 @@ class IndexingPanel(QWidget):
 
         layout.addLayout(grid)
 
-        # Botões
-        btn_layout = QHBoxLayout()
-        btn_save = QPushButton("Salvar no .env")
-        btn_save.setObjectName("btnSave")
-        btn_save.clicked.connect(self._save_config)
-        btn_layout.addWidget(btn_save)
-        btn_layout.addStretch()
-        layout.addLayout(btn_layout)
-
         self._status = QLabel("")
         self._status.setWordWrap(True)
         layout.addWidget(self._status)
@@ -70,12 +62,32 @@ class IndexingPanel(QWidget):
 
         self.reload_config()
 
+        # Auto-save com debounce de 700 ms
+        self._save_timer = QTimer(self)
+        self._save_timer.setSingleShot(True)
+        self._save_timer.setInterval(700)
+        self._save_timer.timeout.connect(self._save_config)
+        self._extensions.textChanged.connect(self._schedule_save)
+        self._include_names.textChanged.connect(self._schedule_save)
+        self._ignore_dirs.textChanged.connect(self._schedule_save)
+        self._chunk_size.valueChanged.connect(self._schedule_save)
+        self._chunk_overlap.valueChanged.connect(self._schedule_save)
+
     def reload_config(self) -> None:
+        for w in (self._extensions, self._include_names, self._ignore_dirs,
+                  self._chunk_size, self._chunk_overlap):
+            w.blockSignals(True)
         self._extensions.setText(",".join(_cfg.FILE_EXTENSIONS))
         self._include_names.setText(",".join(_cfg.INCLUDE_FILENAMES))
         self._ignore_dirs.setText(",".join(_cfg.IGNORE_DIRS))
         self._chunk_size.setValue(_cfg.CHUNK_SIZE)
         self._chunk_overlap.setValue(_cfg.CHUNK_OVERLAP)
+        for w in (self._extensions, self._include_names, self._ignore_dirs,
+                  self._chunk_size, self._chunk_overlap):
+            w.blockSignals(False)
+
+    def _schedule_save(self) -> None:
+        self._save_timer.start()
 
     def _save_config(self) -> None:
         updates = {
@@ -98,9 +110,3 @@ class IndexingPanel(QWidget):
         ]
         _cfg.CHUNK_SIZE = self._chunk_size.value()
         _cfg.CHUNK_OVERLAP = self._chunk_overlap.value()
-
-        self._status.setObjectName("statusSuccess")
-        self._status.setText("✓ Configuração de indexação salva com sucesso!")
-        self._status.setStyleSheet("")
-        self._status.style().unpolish(self._status)
-        self._status.style().polish(self._status)

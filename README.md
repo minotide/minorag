@@ -70,7 +70,8 @@ Clique na aba **⚙ Repositório** e informe:
 - **Token de acesso** para repositórios privados (opcional)
 - **Caminho chave SSH** para autenticação (opcional, ex: `~/.ssh/id_rsa`)
 - **Atualizar no startup** — marque para clonar/atualizar automaticamente ao abrir a aplicação
-- Clique em **Salvar no .env** para guardar as configurações (salvas **no arquivo `.env` do projeto**, dentro do seu container)
+
+As configurações são **salvas automaticamente** no arquivo `.env` do projeto, dentro do seu container, a cada alteração.
 
 > Não se esqueça de manter o arquivo `.env` no `.gitignore` para não vazar credenciais.
 
@@ -92,7 +93,7 @@ Digite sua pergunta no campo de texto e pressione **Enter** ou clique em **Envia
 
 ## ⚙️ Configuração via interface
 
-Todos os parâmetros do projeto são configuráveis diretamente pela interface, sem precisar editar arquivos. Cada painel salva as configurações no `.env` e aplica as mudanças imediatamente na sessão atual.
+Todos os parâmetros do projeto são configuráveis diretamente pela interface, sem precisar editar arquivos. Cada painel **salva automaticamente** as configurações no `.env` após uma breve pausa na digitação (debounce de ~700 ms) e aplica as mudanças imediatamente na sessão atual.
 
 O botão **Restaurar .env** (canto superior direito da janela) sobrescreve o `.env` com todos os valores padrão e recarrega as configurações em memória — útil para desfazer edições manuais incorretas.
 
@@ -112,8 +113,7 @@ Botões disponíveis no painel:
 
 | Botão | Ação |
 |---|---|
-| **Salvar no .env** | Persiste as configurações no arquivo `.env` |
-| **Sincronizar Codebase** | Clona o repositório e reindexa (progresso em tempo real) |
+| **Sincronizar Codebase** | Salva imediatamente e clona o repositório / reindexa (progresso em tempo real) |
 | **Limpar Codebase** | Remove `.codebase/` e o índice do ChromaDB |
 
 ### Painel ⚙ LLM

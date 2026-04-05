@@ -1,8 +1,9 @@
 """Painel de configuração LLM."""
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
-    QDoubleSpinBox, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPlainTextEdit, QPushButton, QSpinBox, QVBoxLayout, QWidget,
+    QDoubleSpinBox, QGridLayout, QLabel, QLineEdit,
+    QPlainTextEdit, QSpinBox, QVBoxLayout, QWidget,
 )
 
 from minorag import config as _cfg
@@ -99,15 +100,6 @@ class LlmPanel(QWidget):
         hint.setStyleSheet("color: #484f58; font-size: 11px;")
         layout.addWidget(hint)
 
-        # Botões
-        btn_layout = QHBoxLayout()
-        btn_save = QPushButton("Salvar no .env")
-        btn_save.setObjectName("btnSave")
-        btn_save.clicked.connect(self._save_config)
-        btn_layout.addWidget(btn_save)
-        btn_layout.addStretch()
-        layout.addLayout(btn_layout)
-
         self._status = QLabel("")
         self._status.setWordWrap(True)
         layout.addWidget(self._status)
@@ -116,7 +108,32 @@ class LlmPanel(QWidget):
 
         self.reload_config()
 
+        # Auto-save com debounce de 700 ms
+        self._save_timer = QTimer(self)
+        self._save_timer.setSingleShot(True)
+        self._save_timer.setInterval(700)
+        self._save_timer.timeout.connect(self._save_config)
+        self._url.textChanged.connect(self._schedule_save)
+        self._embed_model.textChanged.connect(self._schedule_save)
+        self._llm_model.textChanged.connect(self._schedule_save)
+        self._top_k.valueChanged.connect(self._schedule_save)
+        self._num_ctx.valueChanged.connect(self._schedule_save)
+        self._num_predict.valueChanged.connect(self._schedule_save)
+        self._num_thread.valueChanged.connect(self._schedule_save)
+        self._num_batch.valueChanged.connect(self._schedule_save)
+        self._temperature.valueChanged.connect(self._schedule_save)
+        self._repeat_penalty.valueChanged.connect(self._schedule_save)
+        self._prompt.textChanged.connect(self._schedule_save)
+
     def reload_config(self) -> None:
+        widgets = [
+            self._url, self._embed_model, self._llm_model,
+            self._top_k, self._num_ctx, self._num_predict,
+            self._num_thread, self._num_batch, self._temperature,
+            self._repeat_penalty, self._prompt,
+        ]
+        for w in widgets:
+            w.blockSignals(True)
         self._url.setText(_cfg.OLLAMA_URL)
         self._embed_model.setText(_cfg.EMBED_MODEL)
         self._llm_model.setText(_cfg.LLM_MODEL)
@@ -132,6 +149,11 @@ class LlmPanel(QWidget):
         self._repeat_penalty.setValue(
             _cfg.OLLAMA_OPTIONS.get("repeat_penalty", 1.15))
         self._prompt.setPlainText(_cfg.PROMPT_TEMPLATE)
+        for w in widgets:
+            w.blockSignals(False)
+
+    def _schedule_save(self) -> None:
+        self._save_timer.start()
 
     def _save_config(self) -> None:
         prompt_encoded = self._prompt.toPlainText().replace("\n", "\\n")
@@ -161,9 +183,3 @@ class LlmPanel(QWidget):
         _cfg.OLLAMA_OPTIONS["temperature"] = self._temperature.value()
         _cfg.OLLAMA_OPTIONS["repeat_penalty"] = self._repeat_penalty.value()
         _cfg.PROMPT_TEMPLATE = self._prompt.toPlainText()
-
-        self._status.setObjectName("statusSuccess")
-        self._status.setText("✓ Configuração LLM salva com sucesso!")
-        self._status.setStyleSheet("")
-        self._status.style().unpolish(self._status)
-        self._status.style().polish(self._status)
