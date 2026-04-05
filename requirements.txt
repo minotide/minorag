@@ -2,3 +2,4 @@ requests
 chromadb
 PySide6
 python-dotenv
+markdown

@@ -72,6 +72,22 @@ QPushButton#btnSend:hover, QPushButton#btnSave:hover, QPushButton#btnSync:hover 
     border-color: #2ea043;
 }
 
+QPushButton#btnCopy {
+    background: transparent;
+    color: #484f58;
+    border: 1px solid #30363d;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+QPushButton#btnCopy:hover {
+    color: #8b949e;
+    border-color: #8b949e;
+    background: #21262d;
+}
+
 QPushButton#btnDanger {
     background: #3d1010;
     color: #f85149;
