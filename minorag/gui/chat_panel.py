@@ -41,7 +41,7 @@ class _BotWidget(QWidget):
         )
         layout.addWidget(self._label)
 
-        self._btn_copy = QPushButton("⎘  Copiar resposta")
+        self._btn_copy = QPushButton("Copiar resposta")
         self._btn_copy.setObjectName("btnCopy")
         self._btn_copy.setVisible(False)
         layout.addWidget(
