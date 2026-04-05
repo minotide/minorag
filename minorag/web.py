@@ -147,7 +147,7 @@ def api_query():
     metas = (results["metadatas"] or [[]])[0]
     chunks = build_chunks_context(docs, metas)
 
-    answer = generate(build_prompt(question, chunks))
+    answer = generate(build_prompt(question, chunks, metas))
 
     return jsonify({"answer": answer})
 
@@ -185,12 +185,11 @@ def api_query_stream():
             query_embeddings=[q_emb], n_results=_cfg.TOP_K)
 
         yield f"data: {_json.dumps({'type': 'log', 'text': 'Gerando resposta...'})}\n\n"
-        chunks = build_chunks_context(
-            (results["documents"] or [[]])[0],
-            (results["metadatas"] or [[]])[0],
-        )
+        docs = (results["documents"] or [[]])[0]
+        metas = (results["metadatas"] or [[]])[0]
+        chunks = build_chunks_context(docs, metas)
 
-        for token in generate_stream_iter(build_prompt(question, chunks)):
+        for token in generate_stream_iter(build_prompt(question, chunks, metas)):
             yield f"data: {_json.dumps({'type': 'token', 'text': token})}\n\n"
 
         yield f"data: {_json.dumps({'type': 'done'})}\n\n"

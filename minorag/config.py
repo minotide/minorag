@@ -50,7 +50,7 @@ OLLAMA_OPTIONS: dict[str, int | float] = {
 }
 
 PROMPT_DEFAULT = (
-    "Você é um engenheiro de software sênior especializado em análise de código.\n"
+    "Você é um engenheiro de software sênior especializado em {language_expertise}.\n"
     "Responda sempre em português. Seja conciso e direto.\n"
     "\n"
     "REGRAS:\n"
@@ -79,6 +79,31 @@ PROMPT_DEFAULT = (
 _prompt_raw = os.getenv("PROMPT_TEMPLATE", "").strip()
 PROMPT_TEMPLATE: str = _prompt_raw.replace(
     "\\n", "\n") if _prompt_raw else PROMPT_DEFAULT
+
+# ---------------------------------------------------------------------------
+# Mapeamento extensão → nome da linguagem
+# ---------------------------------------------------------------------------
+
+LANG_NAMES: dict[str, str] = {
+    "py": "Python",
+    "java": "Java",
+    "js": "JavaScript",
+    "ts": "TypeScript",
+    "go": "Go",
+    "rs": "Rust",
+    "c": "C",
+    "cpp": "C++",
+    "h": "C/C++",
+    "cs": "C#",
+    "rb": "Ruby",
+    "php": "PHP",
+    "kt": "Kotlin",
+    "scala": "Scala",
+    "swift": "Swift",
+    "m": "Objective-C",
+    "sql": "SQL",
+    "sh": "Shell Script",
+}
 
 # ---------------------------------------------------------------------------
 # Indexação

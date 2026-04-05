@@ -6,11 +6,13 @@ Responsável por buscar chunks relevantes no índice vetorial,
 construir o prompt e acionar o modelo LLM para responder perguntas.
 """
 
+from collections import Counter
+
 import chromadb
 from typing import Sequence, Mapping, Any
 
 from minorag import config as _cfg
-from minorag.config import CHROMA_PATH, TOP_K
+from minorag.config import CHROMA_PATH, LANG_NAMES, TOP_K
 from minorag.ollama import embed, generate_stream
 
 
@@ -46,18 +48,51 @@ def build_chunks_context(
     return "\n\n---\n\n".join(parts)
 
 
-def build_prompt(question: str, chunks: str) -> str:
+def build_prompt(question: str, chunks: str, metas: Sequence[Mapping[str, Any]] = ()) -> str:
     """
     Constrói o prompt completo para envio ao modelo LLM.
 
     Usa o template definido em PROMPT_TEMPLATE (config.py).
     O template deve conter os marcadores {question} e {chunks}.
+    Se o template contiver {language_expertise}, injeta a especialização
+    detectada dinamicamente a partir dos metadados dos chunks recuperados.
 
     @param question: Pergunta feita pelo usuário.
     @param chunks: Trechos de código recuperados do índice, concatenados como contexto.
+    @param metas: Metadados dos chunks para detecção de linguagem.
     @return: String com o prompt formatado para o modelo.
     """
-    return _cfg.PROMPT_TEMPLATE.format(question=question, chunks=chunks)
+    template = _cfg.PROMPT_TEMPLATE
+    if "{language_expertise}" in template:
+        expertise = _build_language_expertise(metas)
+        template = template.replace("{language_expertise}", expertise)
+    return template.format(question=question, chunks=chunks)
+
+
+def detect_languages(metas: Sequence[Mapping[str, Any]]) -> list[str]:
+    """
+    Detecta as linguagens presentes nos chunks recuperados, ordenadas por frequência.
+
+    @param metas: Lista de metadados dos chunks (campo 'language').
+    @return: Lista de nomes de linguagens ordenadas da mais frequente para a menos.
+    """
+    counts: Counter[str] = Counter()
+    for m in metas:
+        lang = m.get("language", "")
+        if lang:
+            counts[lang] += 1
+    return [LANG_NAMES.get(ext, ext) for ext, _ in counts.most_common()]
+
+
+def _build_language_expertise(metas: Sequence[Mapping[str, Any]]) -> str:
+    """Monta a string de especialização em linguagem para o prompt."""
+    langs = detect_languages(metas)
+    if not langs:
+        return "análise de código"
+    if len(langs) == 1:
+        return f"{langs[0]} e análise de código"
+    # ex: "Python, Java e análise de código"
+    return f"{', '.join(langs[:-1])}, {langs[-1]} e análise de código"
 
 
 def query_loop():
@@ -86,6 +121,6 @@ def query_loop():
         docs = (results["documents"] or [[]])[0]
         metas = (results["metadatas"] or [[]])[0]
         chunks = build_chunks_context(docs, metas)
-        prompt = build_prompt(question, chunks)
+        prompt = build_prompt(question, chunks, metas)
         generate_stream(prompt)
         print()
