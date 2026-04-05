@@ -68,9 +68,9 @@ class IndexingPanel(QWidget):
 
         layout.addStretch()
 
-        self._load_config()
+        self.reload_config()
 
-    def _load_config(self) -> None:
+    def reload_config(self) -> None:
         self._extensions.setText(",".join(_cfg.FILE_EXTENSIONS))
         self._include_names.setText(",".join(_cfg.INCLUDE_FILENAMES))
         self._ignore_dirs.setText(",".join(_cfg.IGNORE_DIRS))

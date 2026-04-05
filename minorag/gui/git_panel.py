@@ -79,9 +79,9 @@ class GitPanel(QWidget):
 
         layout.addStretch()
 
-        self._load_config()
+        self.reload_config()
 
-    def _load_config(self) -> None:
+    def reload_config(self) -> None:
         self._url.setText(_cfg.GIT_REPO_URL)
         self._branch.setText(_cfg.GIT_BRANCH)
         self._token.setText(_cfg.GIT_ACCESS_TOKEN)
@@ -151,13 +151,16 @@ class GitPanel(QWidget):
                 "✓ Codebase e índice removidos com sucesso.", success=True)
 
     def _set_status(self, text: str, success: bool = False, error: bool = False) -> None:
-        self._status.setText(text)
         if success:
             self._status.setObjectName("statusSuccess")
         elif error:
             self._status.setObjectName("statusError")
         else:
             self._status.setObjectName("")
+        self._status.setText(text)
+        self._status.setStyleSheet("")
+        self._status.style().unpolish(self._status)
+        self._status.style().polish(self._status)
         self._status.setStyleSheet("")  # force re-apply
         self._status.style().unpolish(self._status)
         self._status.style().polish(self._status)

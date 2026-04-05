@@ -114,9 +114,9 @@ class LlmPanel(QWidget):
 
         layout.addStretch()
 
-        self._load_config()
+        self.reload_config()
 
-    def _load_config(self) -> None:
+    def reload_config(self) -> None:
         self._url.setText(_cfg.OLLAMA_URL)
         self._embed_model.setText(_cfg.EMBED_MODEL)
         self._llm_model.setText(_cfg.LLM_MODEL)

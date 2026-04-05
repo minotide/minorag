@@ -85,7 +85,13 @@ class MainWindow(QMainWindow):
         )
         if reply == QMessageBox.StandardButton.Yes:
             reset_env_defaults()
+            self._reload_all_panels()
             QMessageBox.information(
                 self, "Restaurar .env",
                 ".env restaurado para os valores padrão."
             )
+
+    def _reload_all_panels(self) -> None:
+        self._git.reload_config()
+        self._llm.reload_config()
+        self._indexing.reload_config()
