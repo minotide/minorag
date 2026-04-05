@@ -45,7 +45,7 @@ Após o container subir, acesse **http://localhost:5000** no navegador.
 
 ## 🔧 Como usar
 
-> Suporta: `.java` `.py` `.js` `.ts` `.go` `.rs` `.c` `.cpp` `.cs` `.rb` `.php` `.kt` `.scala` `.swift` `.sql` `.sh` e mais. Configure pelo painel **⚙ Indexação**.
+> Suporta: `.java` `.py` `.js` `.ts` `.go` `.rs` `.c` `.cpp` `.h` `.cs` `.rb` `.php` `.kt` `.scala` `.swift` `.m` `.sql` `.sh` e mais. Configure pelo painel **⚙ Indexação**.
 
 ### 1. Configurar repositório
 
@@ -111,13 +111,13 @@ Configurações do Ollama e do modelo de linguagem:
 | URL do Ollama | `OLLAMA_URL` | `http://localhost:11434` | Endereço da API do Ollama |
 | Modelo de Embedding | `EMBED_MODEL` | `nomic-embed-text` | Modelo para geração de vetores |
 | Modelo LLM | `LLM_MODEL` | `qwen2.5-coder:3b` | Modelo para geração de respostas |
-| Top K | `TOP_K` | `8` | Chunks mais relevantes enviados como contexto |
-| Contexto (num_ctx) | `OLLAMA_NUM_CTX` | `8192` | Janela de contexto em tokens |
-| Tokens gerados | `OLLAMA_NUM_PREDICT` | `1024` | Limite máximo de tokens na resposta |
+| Top K | `TOP_K` | `5` | Chunks mais relevantes enviados como contexto |
+| Contexto (num_ctx) | `OLLAMA_NUM_CTX` | `4096` | Janela de contexto em tokens |
+| Tokens gerados | `OLLAMA_NUM_PREDICT` | `768` | Limite máximo de tokens na resposta |
 | Threads (num_thread) | `OLLAMA_NUM_THREAD` | `8` | Threads de CPU usadas pelo Ollama |
-| Batch (num_batch) | `OLLAMA_NUM_BATCH` | `512` | Tamanho do lote no prefill |
+| Batch (num_batch) | `OLLAMA_NUM_BATCH` | `256` | Tamanho do lote no prefill |
 | Temperature | `OLLAMA_TEMPERATURE` | `0.2` | Criatividade da resposta (0 = determinístico) |
-| Repeat Penalty | `OLLAMA_REPEAT_PENALTY` | `1.3` | Penalidade para evitar repetições |
+| Repeat Penalty | `OLLAMA_REPEAT_PENALTY` | `1.15` | Penalidade para evitar repetições |
 | Prompt Template | `PROMPT_TEMPLATE` | *(ver abaixo)* | Instruções enviadas ao LLM a cada pergunta |
 
 > Para alternar modelos (ex: `llama3.2`, `qwen2.5-coder:7b`), basta atualizar **Modelo LLM** pelo painel e re-indexar se quiser usar um modelo de embedding diferente.
@@ -128,7 +128,7 @@ Controla quais arquivos serão processados e como são divididos:
 
 | Campo | Variável `.env` | Padrão | Descrição |
 |---|---|---|---|
-| Extensões de arquivo | `FILE_EXTENSIONS` | `.java,.py,.js,...` | Lista separada por vírgula |
+| Extensões de arquivo | `FILE_EXTENSIONS` | `.java,.py,.js,.ts,.go,.rs,.c,.cpp,.h,.cs,.rb,.php,.kt,.scala,.swift,.m,.sql,.sh` | Lista separada por vírgula |
 | Nomes incluídos | `INCLUDE_FILENAMES` | `architecture.md` | Arquivos incluídos pelo nome exato |
 | Diretórios ignorados | `IGNORE_DIRS` | `target,.git,...` | Pastas excluídas da varredura |
 | Tamanho do chunk | `CHUNK_SIZE` | `1500` | Caracteres por chunk |
@@ -147,11 +147,17 @@ A variável `WEB_PORT` (padrão `5000`) requer reinício do servidor para ter ef
 ## 🧠 Como funciona
 
 1. **Leitura** — percorre `.codebase/` e lê arquivos das extensões configuradas
-2. **Chunking** — divide cada arquivo em pedaços menores
+2. **Chunking semântico** — divide cada arquivo usando a estratégia mais adequada à linguagem:
+   - **AST** para Python (funções, classes, métodos)
+   - **Blocos `{}`** para Java, JS, TS, Go, C, C++, C#, Rust, Kotlin, PHP, Scala, Swift, Objective-C
+   - **Blocos `end`** para Ruby (`def/class/module...end`)
+   - **Statements** para SQL (separação por `;`, extrai nomes de funções/procedures/views)
+   - **Tamanho fixo** como fallback para demais extensões
+   - Cada chunk inclui metadados: arquivo, nome do símbolo, linha inicial, tipo (`function`, `class`, `method`, `statement`, `block`) e linguagem
 3. **Embeddings** — gera vetores via Ollama (`nomic-embed-text`)
 4. **Armazenamento** — salva no ChromaDB (persistente em disco)
 5. **Busca** — sua pergunta vira embedding e busca os chunks mais relevantes
-6. **Resposta** — os chunks são passados como contexto para o LLM (`qwen2.5-coder:3b`)
+6. **Resposta** — os chunks (com metadados de localização) são passados como contexto para o LLM (`qwen2.5-coder:3b`), que detecta automaticamente as linguagens presentes e adapta a resposta
 
 ---
 
@@ -168,7 +174,7 @@ Aumentar esse número pode melhorar a qualidade das respostas em projetos grande
 | `TOP_K` | Uso de contexto estimado | Quando usar |
 | ------- | ------------------------ | ----------- |
 | `3`     | ~3.000 chars             | Projetos pequenos, respostas rápidas |
-| `5`     | ~5.000 chars             | Equilíbrio entre qualidade e velocidade |
+| `5`     | ~5.000 chars             | **Padrão** — equilíbrio entre qualidade e velocidade |
 | `8`     | ~8.000 chars             | Projetos grandes, perguntas amplas |
 | `12`    | ~12.000 chars            | Máxima cobertura — exige `num_ctx` alto |
 
@@ -180,22 +186,35 @@ Aumentar esse número pode melhorar a qualidade das respostas em projetos grande
 
 O template do prompt é configurável diretamente pelo painel **⚙ LLM**, no campo **Prompt Template**. A alteração tem efeito imediato e é persistida no `.env`.
 
-> Os marcadores `{chunks}` e `{question}` são obrigatórios — são substituídos automaticamente pelo retriever antes de enviar ao modelo.
+> Os marcadores `{chunks}` e `{question}` são obrigatórios — são substituídos automaticamente pelo retriever antes de enviar ao modelo. O marcador opcional `{language_expertise}` é substituído automaticamente pelas linguagens detectadas nos chunks recuperados (ex: "Python, Java e análise de código").
 
 O padrão é:
 
 ```
-Você é um assistente de código. Responda SEMPRE em português.
-Responda a pergunta utilizando APENAS os trechos de código fornecidos abaixo.
-Não utilize nenhum conhecimento além do que está nos trechos.
-Se a pergunta não estiver relacionada ao código fornecido, responda exatamente:
-"Essa pergunta está fora do contexto do seu código."
+Você é um engenheiro de software sênior especializado em {language_expertise}.
+Responda sempre em português. Seja conciso e direto.
 
-Trechos de código: {chunks}
+REGRAS:
+- Baseie-se EXCLUSIVAMENTE nos trechos de código fornecidos abaixo.
+- NÃO invente informações. Se não houver dados suficientes, diga.
+- Use os metadados (FILE, LINE, SYMBOL) dos cabeçalhos para citar localizações.
+- Correlacione trechos quando a pergunta envolver múltiplos arquivos.
 
-Pergunta: {question}
+CÓDIGO:
+{chunks}
 
-Resposta:
+PERGUNTA:
+{question}
+
+FORMATO DA RESPOSTA:
+### Resposta
+<resposta direta e objetiva>
+
+### Localização no código
+- Arquivo, símbolo, tipo e linha inicial de cada trecho relevante
+
+### Evidências no código
+<trechos ou descrição que sustentam a resposta>
 ```
 
 ---
