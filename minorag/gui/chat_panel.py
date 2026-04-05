@@ -28,7 +28,7 @@ class _BotWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
-        self._label = QLabel("⏳ Pensando...")
+        self._label = QLabel("Pensando...")
         self._label.setObjectName("msgBot")
         self._label.setWordWrap(True)
         self._label.setTextInteractionFlags(
@@ -51,7 +51,7 @@ class _BotWidget(QWidget):
 
     def set_log(self, text: str) -> None:
         self._label.setTextFormat(Qt.TextFormat.PlainText)
-        self._label.setText(f"⏳ {text}")
+        self._label.setText(f"{text}")
 
     def append_token(self, token: str) -> None:
         self._text += token
