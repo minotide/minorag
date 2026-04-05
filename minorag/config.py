@@ -38,62 +38,42 @@ GIT_SSH_KEY_PATH: str = os.getenv("GIT_SSH_KEY_PATH", "")
 OLLAMA_URL: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
 EMBED_MODEL: str = os.getenv("EMBED_MODEL", "nomic-embed-text")
 LLM_MODEL: str = os.getenv("LLM_MODEL", "qwen2.5-coder:3b")
-TOP_K: int = int(os.getenv("TOP_K", "8"))
+TOP_K: int = int(os.getenv("TOP_K", "5"))
 
 OLLAMA_OPTIONS: dict[str, int | float] = {
-    "num_ctx": int(os.getenv("OLLAMA_NUM_CTX", "8192")),
-    "num_predict": int(os.getenv("OLLAMA_NUM_PREDICT", "1024")),
+    "num_ctx": int(os.getenv("OLLAMA_NUM_CTX", "4096")),
+    "num_predict": int(os.getenv("OLLAMA_NUM_PREDICT", "768")),
     "num_thread": int(os.getenv("OLLAMA_NUM_THREAD", "8")),
-    "num_batch": int(os.getenv("OLLAMA_NUM_BATCH", "512")),
+    "num_batch": int(os.getenv("OLLAMA_NUM_BATCH", "256")),
     "temperature": float(os.getenv("OLLAMA_TEMPERATURE", "0.2")),
-    "repeat_penalty": float(os.getenv("OLLAMA_REPEAT_PENALTY", "1.3")),
+    "repeat_penalty": float(os.getenv("OLLAMA_REPEAT_PENALTY", "1.15")),
 }
 
 PROMPT_DEFAULT = (
-    "Você é um engenheiro de software sênior especializado em leitura, análise e explicação de código.\n"
-    "Responda sempre em português.\n"
+    "Você é um engenheiro de software sênior especializado em análise de código.\n"
+    "Responda sempre em português. Seja conciso e direto.\n"
     "\n"
     "REGRAS:\n"
-    "- Baseie sua resposta EXCLUSIVAMENTE no código e metadados fornecidos.\n"
-    "- NÃO invente informações.\n"
-    "- Se não houver informação suficiente, responda: 'Não foi possível determinar com base no código fornecido.'\n"
-    "- Seja claro, técnico e direto.\n"
-    "- Quando houver múltiplos trechos, correlacione as informações entre eles.\n"
+    "- Baseie-se EXCLUSIVAMENTE nos trechos de código fornecidos abaixo.\n"
+    "- NÃO invente informações. Se não houver dados suficientes, diga.\n"
+    "- Use os metadados (FILE, LINE, SYMBOL) dos cabeçalhos para citar localizações.\n"
+    "- Correlacione trechos quando a pergunta envolver múltiplos arquivos.\n"
     "\n"
-    "CONTEXTO DOS DADOS:\n"
-    "Cada trecho contém:\n"
-    "- name: nome da função, classe ou símbolo\n"
-    "- line: linha inicial no arquivo\n"
-    "- kind: tipo do símbolo (ex: function, class, method, etc.)\n"
-    "\n"
-    "Use esses metadados para:\n"
-    "- Identificar o papel do trecho no sistema\n"
-    "- Indicar onde o código está localizado\n"
-    "- Melhorar a precisão da explicação\n"
-    "\n"
-    "OBJETIVO:\n"
-    "Explicar o comportamento, estrutura ou lógica do código com base nos trechos fornecidos.\n"
-    "\n"
-    "CÓDIGO + METADADOS:\n"
+    "CÓDIGO:\n"
     "{chunks}\n"
     "\n"
     "PERGUNTA:\n"
     "{question}\n"
     "\n"
-    "RESPONDA NO FORMATO:\n"
-    "## Resposta\n"
-    "<resposta direta>\n"
+    "FORMATO DA RESPOSTA:\n"
+    "### Resposta\n"
+    "<resposta direta e objetiva>\n"
     "\n"
-    "## Explicação\n"
-    "<explicação técnica>\n"
+    "### Localização no código\n"
+    "- Arquivo, símbolo, tipo e linha inicial de cada trecho relevante\n"
     "\n"
-    "## Localização no código\n"
-    "- Símbolo: <name>\n"
-    "- Tipo: <kind>\n"
-    "- Linha inicial: <line>\n"
-    "\n"
-    "## Evidências no código\n"
-    "<trechos relevantes ou descrição>\n"
+    "### Evidências no código\n"
+    "<trechos ou descrição que sustentam a resposta>\n"
 )
 
 _prompt_raw = os.getenv("PROMPT_TEMPLATE", "").strip()

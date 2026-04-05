@@ -468,13 +468,13 @@ def api_env_reset():
         "OLLAMA_URL": "http://localhost:11434",
         "EMBED_MODEL": "nomic-embed-text",
         "LLM_MODEL": "qwen2.5-coder:3b",
-        "TOP_K": "8",
-        "OLLAMA_NUM_CTX": "8192",
-        "OLLAMA_NUM_PREDICT": "1024",
+        "TOP_K": "5",
+        "OLLAMA_NUM_CTX": "4096",
+        "OLLAMA_NUM_PREDICT": "768",
         "OLLAMA_NUM_THREAD": "8",
-        "OLLAMA_NUM_BATCH": "512",
+        "OLLAMA_NUM_BATCH": "256",
         "OLLAMA_TEMPERATURE": "0.2",
-        "OLLAMA_REPEAT_PENALTY": "1.3",
+        "OLLAMA_REPEAT_PENALTY": "1.15",
         "PROMPT_TEMPLATE": _PROMPT_DEFAULT_ENCODED,
         "FILE_EXTENSIONS": ",".join([
             ".java", ".py", ".js", ".ts", ".go", ".rs",
@@ -500,13 +500,13 @@ def api_env_reset():
     _cfg.OLLAMA_URL = defaults["OLLAMA_URL"]
     _cfg.EMBED_MODEL = defaults["EMBED_MODEL"]
     _cfg.LLM_MODEL = defaults["LLM_MODEL"]
-    _cfg.TOP_K = 8
-    _cfg.OLLAMA_OPTIONS["num_ctx"] = 8192
-    _cfg.OLLAMA_OPTIONS["num_predict"] = 1024
+    _cfg.TOP_K = 5
+    _cfg.OLLAMA_OPTIONS["num_ctx"] = 4096
+    _cfg.OLLAMA_OPTIONS["num_predict"] = 768
     _cfg.OLLAMA_OPTIONS["num_thread"] = 8
-    _cfg.OLLAMA_OPTIONS["num_batch"] = 512
+    _cfg.OLLAMA_OPTIONS["num_batch"] = 256
     _cfg.OLLAMA_OPTIONS["temperature"] = 0.2
-    _cfg.OLLAMA_OPTIONS["repeat_penalty"] = 1.3
+    _cfg.OLLAMA_OPTIONS["repeat_penalty"] = 1.15
     _cfg.PROMPT_TEMPLATE = _cfg.PROMPT_DEFAULT
     _cfg.FILE_EXTENSIONS = [x.strip()
                             for x in defaults["FILE_EXTENSIONS"].split(",")]
