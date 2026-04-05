@@ -18,7 +18,7 @@ from minorag import config as _cfg
 from minorag.chunkers import chunk_by_language
 from minorag.indexer import read_files
 from minorag.ollama import embed, generate, generate_stream_iter
-from minorag.retriever import build_prompt
+from minorag.retriever import build_chunks_context, build_prompt
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -143,7 +143,9 @@ def api_query():
 
     results = collection.query(query_embeddings=[q_emb], n_results=_cfg.TOP_K)
 
-    chunks = "\n\n---\n\n".join((results["documents"] or [[]])[0])
+    docs = (results["documents"] or [[]])[0]
+    metas = (results["metadatas"] or [[]])[0]
+    chunks = build_chunks_context(docs, metas)
 
     answer = generate(build_prompt(question, chunks))
 
@@ -183,7 +185,10 @@ def api_query_stream():
             query_embeddings=[q_emb], n_results=_cfg.TOP_K)
 
         yield f"data: {_json.dumps({'type': 'log', 'text': 'Gerando resposta...'})}\n\n"
-        chunks = "\n\n---\n\n".join((results["documents"] or [[]])[0])
+        chunks = build_chunks_context(
+            (results["documents"] or [[]])[0],
+            (results["metadatas"] or [[]])[0],
+        )
 
         for token in generate_stream_iter(build_prompt(question, chunks)):
             yield f"data: {_json.dumps({'type': 'token', 'text': token})}\n\n"

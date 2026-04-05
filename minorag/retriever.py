@@ -1,3 +1,4 @@
+
 """
 Módulo de recuperação e geração de respostas (RAG).
 
@@ -6,10 +7,43 @@ construir o prompt e acionar o modelo LLM para responder perguntas.
 """
 
 import chromadb
+from typing import Sequence, Mapping, Any
 
 from minorag import config as _cfg
 from minorag.config import CHROMA_PATH, TOP_K
 from minorag.ollama import embed, generate_stream
+
+
+def build_chunks_context(
+    docs: Sequence[str],
+    metas: Sequence[Mapping[str, Any]],
+) -> str:
+    """
+    Monta a string de contexto enriquecida com metadados de localização.
+
+    Cada chunk recebe um cabeçalho com arquivo, linha e símbolo extraídos
+    dos metadados do ChromaDB, permitindo que o LLM cite localizações precisas.
+
+    @param docs: Lista de documentos retornados pelo ChromaDB.
+    @param metas: Lista de metadados correspondentes a cada documento.
+    @return: String formatada com cabeçalhos de localização entre separadores.
+    """
+    parts: list[str] = []
+    for doc, meta in zip(docs, metas):
+        header_parts = [f"FILE: {meta.get('file', '')}"]
+        line = meta.get("line")
+        if line is not None:
+            header_parts.append(f"LINE: {line}")
+        name = meta.get("name")
+        if name:
+            kind = meta.get("kind", "")
+            symbol = f"SYMBOL: {name}"
+            if kind:
+                symbol += f" [{kind}]"
+            header_parts.append(symbol)
+        header = " | ".join(header_parts)
+        parts.append(f"### {header}\n\n{doc}")
+    return "\n\n---\n\n".join(parts)
 
 
 def build_prompt(question: str, chunks: str) -> str:
@@ -49,7 +83,9 @@ def query_loop():
         results = collection.query(query_embeddings=[q_emb], n_results=TOP_K)
         print("Gerando resposta...\n")
 
-        chunks = "\n\n---\n\n".join((results["documents"] or [[]])[0])
+        docs = (results["documents"] or [[]])[0]
+        metas = (results["metadatas"] or [[]])[0]
+        chunks = build_chunks_context(docs, metas)
         prompt = build_prompt(question, chunks)
         generate_stream(prompt)
         print()
